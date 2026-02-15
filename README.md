@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/img/logo.png" alt="clawzero" width="480" />
+</p>
+
 # clawzero
 
 Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://github.com/openclaw/openclaw).
