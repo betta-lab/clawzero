@@ -11,6 +11,7 @@ pub enum AgentEvent {
     ToolResult {
         id: String,
         name: String,
+        input: serde_json::Value,
         output: String,
         is_error: bool,
     },

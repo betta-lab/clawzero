@@ -179,6 +179,38 @@ async fn repl_loop(agent: &mut Agent) {
     }
 }
 
+/// Format tool input for display based on tool name.
+/// Returns a human-readable summary of what the tool is about to do.
+pub fn format_tool_input(name: &str, input: &serde_json::Value) -> String {
+    match name {
+        "bash" => {
+            let cmd = input["command"].as_str().unwrap_or("(unknown)");
+            format!("$ {cmd}")
+        }
+        "file_read" => {
+            let path = input["path"].as_str().unwrap_or("(unknown)");
+            format!("path: {path}")
+        }
+        "file_write" => {
+            let path = input["path"].as_str().unwrap_or("(unknown)");
+            let size = input["content"].as_str().map(|c| c.len()).unwrap_or(0);
+            format!("path: {path} ({size} bytes)")
+        }
+        "file_edit" => {
+            let path = input["path"].as_str().unwrap_or("(unknown)");
+            format!("path: {path}")
+        }
+        _ => {
+            let s = input.to_string();
+            if s.len() > 200 {
+                format!("{}...", &s[..200])
+            } else {
+                s
+            }
+        }
+    }
+}
+
 fn print_event(event: &AgentEvent) {
     match event {
         AgentEvent::TextDelta(text) => {
@@ -190,18 +222,20 @@ fn print_event(event: &AgentEvent) {
         }
         AgentEvent::ToolResult {
             name,
+            input,
             output,
             is_error,
             ..
         } => {
             let status = if *is_error { "error" } else { "ok" };
+            let input_display = format_tool_input(name, input);
             // Truncate long output for display
             let display = if output.len() > 500 {
                 format!("{}... ({} bytes)", &output[..500], output.len())
             } else {
                 output.clone()
             };
-            eprintln!("[{name} -> {status}] {display}");
+            eprintln!("[{name}: {input_display} -> {status}] {display}");
         }
         AgentEvent::TurnComplete { usage } => {
             tracing::debug!(
@@ -229,5 +263,65 @@ fn print_event(event: &AgentEvent) {
         AgentEvent::Error(msg) => {
             eprintln!("\n[error] {msg}");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn format_bash_command() {
+        let input = json!({"command": "echo hello"});
+        assert_eq!(format_tool_input("bash", &input), "$ echo hello");
+    }
+
+    #[test]
+    fn format_bash_missing_command() {
+        let input = json!({});
+        assert_eq!(format_tool_input("bash", &input), "$ (unknown)");
+    }
+
+    #[test]
+    fn format_file_read_path() {
+        let input = json!({"path": "src/main.rs"});
+        assert_eq!(format_tool_input("file_read", &input), "path: src/main.rs");
+    }
+
+    #[test]
+    fn format_file_write_path_and_size() {
+        let input = json!({"path": "out.txt", "content": "hello"});
+        assert_eq!(
+            format_tool_input("file_write", &input),
+            "path: out.txt (5 bytes)"
+        );
+    }
+
+    #[test]
+    fn format_file_edit_path() {
+        let input = json!({"path": "src/lib.rs", "old_text": "a", "new_text": "b"});
+        assert_eq!(
+            format_tool_input("file_edit", &input),
+            "path: src/lib.rs"
+        );
+    }
+
+    #[test]
+    fn format_unknown_tool_shows_json() {
+        let input = json!({"key": "value"});
+        assert_eq!(
+            format_tool_input("custom_tool", &input),
+            r#"{"key":"value"}"#
+        );
+    }
+
+    #[test]
+    fn format_unknown_tool_truncates_long_json() {
+        let long_value = "x".repeat(300);
+        let input = json!({"key": long_value});
+        let result = format_tool_input("custom_tool", &input);
+        assert!(result.len() <= 203); // 200 + "..."
+        assert!(result.ends_with("..."));
     }
 }

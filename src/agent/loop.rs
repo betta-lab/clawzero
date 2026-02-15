@@ -252,7 +252,7 @@ impl Agent {
                         serde_json::from_str(&tc.input_json).unwrap_or_default();
 
                     let output = match self.tool_registry.get(&tc.name) {
-                        Some(tool) => tool.execute(input).await,
+                        Some(tool) => tool.execute(input.clone()).await,
                         None => crate::tool::traits::ToolOutput {
                             content: format!("Unknown tool: {}", tc.name),
                             is_error: true,
@@ -262,6 +262,7 @@ impl Agent {
                     on_event(&AgentEvent::ToolResult {
                         id: tc.id.clone(),
                         name: tc.name.clone(),
+                        input,
                         output: output.content.clone(),
                         is_error: output.is_error,
                     });
