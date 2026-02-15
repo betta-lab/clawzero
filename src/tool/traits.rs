@@ -44,6 +44,13 @@ impl ToolRegistry {
         self.tools.get(name).cloned()
     }
 
+    /// Register multiple tools at once.
+    pub fn register_all(&mut self, tools: Vec<Arc<dyn Tool>>) {
+        for tool in tools {
+            self.register(tool);
+        }
+    }
+
     pub fn definitions(&self) -> Vec<ToolDefinition> {
         self.tools.values().map(|t| t.definition()).collect()
     }

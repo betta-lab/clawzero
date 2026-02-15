@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use futures_util::StreamExt;
 use serde_json::json;
@@ -7,6 +8,7 @@ use crate::error::ClawError;
 use crate::model::message::{ContentBlock, Role};
 use crate::model::request::CompletionRequest;
 use crate::model::response::{StopReason, StreamEvent, Usage};
+use crate::provider::auth::AuthHook;
 use crate::provider::http::{build_http_client, parse_sse_stream};
 use crate::provider::traits::{EventStream, Provider};
 
@@ -15,6 +17,7 @@ pub struct AnthropicProtocol {
     base_url: String,
     api_key: String,
     extra_headers: HashMap<String, String>,
+    auth_hook: Option<Arc<dyn AuthHook>>,
 }
 
 impl AnthropicProtocol {
@@ -22,12 +25,14 @@ impl AnthropicProtocol {
         base_url: String,
         api_key: String,
         extra_headers: HashMap<String, String>,
+        auth_hook: Option<Arc<dyn AuthHook>>,
     ) -> Self {
         Self {
             client: build_http_client(),
             base_url,
             api_key,
             extra_headers,
+            auth_hook,
         }
     }
 
@@ -121,7 +126,12 @@ impl Provider for AnthropicProtocol {
         request: &'a CompletionRequest,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<EventStream, ClawError>> + Send + 'a>> {
         Box::pin(async move {
-            let url = format!("{}/v1/messages", self.base_url);
+            let url = if let Some(ref hook) = self.auth_hook {
+                hook.override_url(&self.base_url, &request.model)
+                    .unwrap_or_else(|| format!("{}/v1/messages", self.base_url))
+            } else {
+                format!("{}/v1/messages", self.base_url)
+            };
             let body = self.build_body(request);
 
             let mut req = self
@@ -134,6 +144,11 @@ impl Provider for AnthropicProtocol {
 
             for (key, value) in &self.extra_headers {
                 req = req.header(key.as_str(), value.as_str());
+            }
+
+            // Apply auth hook (e.g., Vertex OAuth2 bearer token)
+            if let Some(ref hook) = self.auth_hook {
+                req = hook.prepare_request(req).await?;
             }
 
             let response = req.send().await?;

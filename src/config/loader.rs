@@ -56,6 +56,9 @@ fn builtin_defaults() -> AppConfig {
                 "claude-sonnet-4-20250514".to_string(),
                 "claude-haiku-35-20241022".to_string(),
             ],
+            auth: None,
+            project_id: None,
+            region: None,
         },
     );
 
@@ -72,12 +75,16 @@ fn builtin_defaults() -> AppConfig {
                 "gpt-4o-mini".to_string(),
                 "o3-mini".to_string(),
             ],
+            auth: None,
+            project_id: None,
+            region: None,
         },
     );
 
     AppConfig {
         defaults: Default::default(),
         providers,
+        tools: Vec::new(),
     }
 }
 

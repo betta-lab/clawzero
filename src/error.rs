@@ -32,4 +32,10 @@ pub enum ClawError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Session error: {0}")]
+    Session(String),
+
+    #[error("Auth error: {0}")]
+    Auth(String),
 }

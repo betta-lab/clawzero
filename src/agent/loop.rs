@@ -4,9 +4,12 @@ use futures_util::StreamExt;
 
 use crate::agent::context::ConversationContext;
 use crate::agent::event::AgentEvent;
-use crate::model::message::ContentBlock;
+use crate::agent::token::{estimate_context_tokens, ContextLimits};
+use crate::model::message::{ContentBlock, Message, Role};
 use crate::model::response::{StopReason, StreamEvent, Usage};
 use crate::provider::traits::Provider;
+use crate::session::store::SessionWriter;
+use crate::session::types::SessionEntry;
 use crate::tool::traits::ToolRegistry;
 
 /// Pending tool call accumulated from streaming events.
@@ -22,6 +25,8 @@ pub struct Agent {
     tool_registry: ToolRegistry,
     context: ConversationContext,
     max_turns: usize,
+    session_writer: Option<SessionWriter>,
+    context_limits: ContextLimits,
 }
 
 impl Agent {
@@ -38,6 +43,48 @@ impl Agent {
             tool_registry,
             context,
             max_turns,
+            session_writer: None,
+            context_limits: ContextLimits::default(),
+        }
+    }
+
+    /// Set context limits for automatic compaction.
+    pub fn set_context_limits(&mut self, limits: ContextLimits) {
+        self.context_limits = limits;
+    }
+
+    /// Set a session writer for auto-saving conversation history.
+    pub fn set_session_writer(&mut self, writer: SessionWriter) {
+        self.session_writer = Some(writer);
+    }
+
+    /// Get the session ID if a session is active.
+    pub fn session_id(&self) -> Option<&str> {
+        self.session_writer.as_ref().map(|w| w.session_id())
+    }
+
+    /// Save a message to the session file if a writer is active.
+    fn save_message(&mut self, message: &Message) {
+        if let Some(ref mut writer) = self.session_writer {
+            let entry = SessionEntry::Message {
+                message: message.clone(),
+            };
+            if let Err(e) = writer.append(&entry) {
+                tracing::warn!("Failed to save session entry: {e}");
+            }
+        }
+    }
+
+    /// Save usage stats to the session file.
+    fn save_usage(&mut self, usage: &Usage) {
+        if let Some(ref mut writer) = self.session_writer {
+            let entry = SessionEntry::Usage {
+                input_tokens: usage.input_tokens,
+                output_tokens: usage.output_tokens,
+            };
+            if let Err(e) = writer.append(&entry) {
+                tracing::warn!("Failed to save usage entry: {e}");
+            }
         }
     }
 
@@ -48,11 +95,37 @@ impl Agent {
         user_input: String,
         mut on_event: impl FnMut(&AgentEvent),
     ) {
-        self.context.push_user_message(user_input);
+        self.context.push_user_message(user_input.clone());
+
+        // Save user message to session
+        self.save_message(&Message {
+            role: Role::User,
+            content: vec![ContentBlock::Text { text: user_input }],
+        });
 
         let mut total_usage = Usage::default();
 
         for _turn in 0..self.max_turns {
+            // Auto-compact context if approaching limits
+            if self.context.needs_compaction(&self.context_limits) {
+                let original_tokens = estimate_context_tokens(
+                    "",
+                    self.context.messages(),
+                );
+                let messages_dropped = self.context.compact(&self.context_limits);
+                if messages_dropped > 0 {
+                    let compacted_tokens = estimate_context_tokens(
+                        "",
+                        self.context.messages(),
+                    );
+                    on_event(&AgentEvent::ContextCompacted {
+                        original_tokens,
+                        compacted_tokens,
+                        messages_dropped,
+                    });
+                }
+            }
+
             let request = self
                 .context
                 .build_request(&self.model, &self.tool_registry.definitions());
@@ -132,6 +205,7 @@ impl Agent {
                         _stop_reason = sr;
                         total_usage.input_tokens += usage.input_tokens;
                         total_usage.output_tokens += usage.output_tokens;
+                        self.save_usage(&usage);
                         on_event(&AgentEvent::TurnComplete { usage });
                     }
                 }
@@ -156,7 +230,14 @@ impl Agent {
                 pending_tool_calls.push(tool);
             }
 
-            self.context.push_assistant_message(assistant_blocks);
+            self.context
+                .push_assistant_message(assistant_blocks.clone());
+
+            // Save assistant message to session
+            self.save_message(&Message {
+                role: Role::Assistant,
+                content: assistant_blocks,
+            });
 
             // Execute tools if needed
             // Note: check pending_tool_calls directly rather than relying solely on
@@ -192,7 +273,13 @@ impl Agent {
                     });
                 }
 
-                self.context.push_tool_results(tool_results);
+                self.context.push_tool_results(tool_results.clone());
+
+                // Save tool results to session
+                self.save_message(&Message {
+                    role: Role::User,
+                    content: tool_results,
+                });
                 // Continue loop -> next model call
             } else {
                 // Done

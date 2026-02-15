@@ -2,6 +2,8 @@ pub mod agent;
 pub mod cli;
 pub mod config;
 pub mod error;
+pub mod memory;
 pub mod model;
 pub mod provider;
+pub mod session;
 pub mod tool;

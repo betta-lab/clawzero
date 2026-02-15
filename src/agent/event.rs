@@ -18,6 +18,12 @@ pub enum AgentEvent {
     TurnComplete { usage: Usage },
     /// Agent finished (end_turn or max_tokens)
     Done { total_usage: Usage },
+    /// Context was compacted to fit within limits
+    ContextCompacted {
+        original_tokens: u32,
+        compacted_tokens: u32,
+        messages_dropped: usize,
+    },
     /// Error occurred
     Error(String),
 }
