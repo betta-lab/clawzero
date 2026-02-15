@@ -69,7 +69,7 @@ impl Agent {
             let mut pending_tool_calls: Vec<PendingToolCall> = Vec::new();
             let mut current_text = String::new();
             let mut current_tool: Option<PendingToolCall> = None;
-            let mut stop_reason = StopReason::EndTurn;
+            let mut _stop_reason = StopReason::EndTurn;
 
             futures_util::pin_mut!(event_stream);
 
@@ -129,7 +129,7 @@ impl Agent {
                         stop_reason: sr,
                         usage,
                     }) => {
-                        stop_reason = sr;
+                        _stop_reason = sr;
                         total_usage.input_tokens += usage.input_tokens;
                         total_usage.output_tokens += usage.output_tokens;
                         on_event(&AgentEvent::TurnComplete { usage });
@@ -159,7 +159,11 @@ impl Agent {
             self.context.push_assistant_message(assistant_blocks);
 
             // Execute tools if needed
-            if stop_reason == StopReason::ToolUse && !pending_tool_calls.is_empty() {
+            // Note: check pending_tool_calls directly rather than relying solely on
+            // StopReason, because some providers (OpenAI-compatible) may send
+            // finish_reason and usage in separate chunks, causing StopReason to be
+            // EndTurn even when tool calls were requested.
+            if !pending_tool_calls.is_empty() {
                 let mut tool_results = Vec::new();
 
                 for tc in &pending_tool_calls {
