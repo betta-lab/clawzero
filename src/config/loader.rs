@@ -101,6 +101,22 @@ fn merge_config(base: &mut AppConfig, overlay: AppConfig) {
     for (name, provider) in overlay.providers {
         base.providers.insert(name, provider);
     }
+
+    // Merge gateway: overlay fields override base fields
+    if overlay.gateway.slack.is_some() {
+        base.gateway.slack = overlay.gateway.slack;
+    }
+    if overlay.gateway.discord.is_some() {
+        base.gateway.discord = overlay.gateway.discord;
+    }
+    if overlay.gateway.webui.is_some() {
+        base.gateway.webui = overlay.gateway.webui;
+    }
+
+    // Merge tools: overlay replaces if non-empty
+    if !overlay.tools.is_empty() {
+        base.tools = overlay.tools;
+    }
 }
 
 /// Resolve the API key for a provider config.
