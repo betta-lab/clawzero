@@ -22,16 +22,8 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 
 ## Benchmark
 
-Performance comparison vs Claude Code and OpenClaw (all using **Sonnet 4.5** model):
-
 <p align="center">
-  <img src="docs/img/bench/startup_time.png" alt="Startup Time" width="45%" />
-  <img src="docs/img/bench/e2e_time.png" alt="E2E Time" width="45%" />
-</p>
-
-<p align="center">
-  <img src="docs/img/bench/ttft.png" alt="TTFT" width="45%" />
-  <img src="docs/img/bench/memory.png" alt="Memory" width="45%" />
+  <img src="docs/img/bench/benchmark.png" alt="Performance Comparison" width="100%" />
 </p>
 
 ### Summary Table
