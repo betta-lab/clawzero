@@ -43,4 +43,5 @@
 
 # Development
 
+- [Contributing](development/contributing.md)
 - [Benchmarking](development/benchmarking.md)

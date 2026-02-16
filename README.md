@@ -46,12 +46,22 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 ## Quick Start
 
 ```bash
-cargo install --path .
+curl -fsSL https://raw.githubusercontent.com/betta-lab/clawzero/main/install.sh | sh
 clawzero init          # Interactive setup — generates config with API keys
 clawzero "Hello, world!"
 ```
 
+Or build from source:
+
+```bash
+cargo install --path .
+```
+
 See the [documentation](https://betta-lab.github.io/clawzero/) for installation options, configuration, and usage details.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
 
 ## License
 

@@ -1,6 +1,26 @@
 # Installation
 
-## Pre-built binaries
+## Install script (recommended)
+
+Download and install the latest pre-built binary:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/betta-lab/clawzero/main/install.sh | sh
+```
+
+By default, the binary is installed to `~/.local/bin`. You can change this with the `INSTALL_DIR` environment variable:
+
+```bash
+INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/betta-lab/clawzero/main/install.sh | sh
+```
+
+Supported targets:
+- `x86_64-unknown-linux-gnu`
+- `aarch64-unknown-linux-gnu`
+- `x86_64-apple-darwin`
+- `aarch64-apple-darwin`
+
+## Manual download
 
 Download from [GitHub Releases](https://github.com/betta-lab/clawzero/releases):
 
