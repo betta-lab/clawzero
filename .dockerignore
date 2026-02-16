@@ -1,0 +1,7 @@
+target/
+.git/
+docs/book/
+bench/results/
+node_modules/
+*.md
+!README.md
