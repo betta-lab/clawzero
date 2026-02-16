@@ -14,6 +14,10 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub resume: Option<String>,
 
+    /// Disable TUI and use plain text mode
+    #[arg(long, global = true)]
+    pub no_tui: bool,
+
     /// One-shot prompt (if no subcommand given)
     #[arg(trailing_var_arg = true)]
     pub prompt: Vec<String>,

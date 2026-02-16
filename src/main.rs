@@ -1,3 +1,4 @@
+use std::io::IsTerminal;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -7,6 +8,7 @@ use tracing_subscriber::EnvFilter;
 use clawzero::agent::factory::AgentFactory;
 use clawzero::cli::args::{Cli, Command, SessionAction};
 use clawzero::cli::repl;
+use clawzero::cli::tui;
 use clawzero::config::loader::load_config;
 use clawzero::gateway::session_map::SessionMap;
 use clawzero::provider::registry::ProviderRegistry;
@@ -67,17 +69,33 @@ async fn main() -> Result<()> {
     let registry = ProviderRegistry::from_config(&config)?;
     let (provider, model) = registry.resolve(&model_spec)?;
 
+    // Determine whether to use TUI: enabled by default, disabled with --no-tui or non-TTY stdin
+    let use_tui = !cli.no_tui && std::io::stdin().is_terminal();
+
     match cli.command {
         Some(Command::Chat) => {
-            repl::run_repl(
-                provider,
-                model,
-                config.defaults.max_tokens,
-                config.defaults.max_turns,
-                config.defaults.context_limit,
-                &config.tools,
-            )
-            .await;
+            if use_tui {
+                let factory = AgentFactory::new(
+                    provider,
+                    model,
+                    config.defaults.max_tokens,
+                    config.defaults.max_turns,
+                    config.defaults.context_limit,
+                    config.tools.clone(),
+                );
+                let store = SessionStore::new().ok();
+                tui::run_tui_repl(&factory, store.as_ref()).await?;
+            } else {
+                repl::run_repl(
+                    provider,
+                    model,
+                    config.defaults.max_tokens,
+                    config.defaults.max_turns,
+                    config.defaults.context_limit,
+                    &config.tools,
+                )
+                .await;
+            }
         }
         Some(Command::Config) => {
             println!("Default model: {}", config.defaults.model);
@@ -161,15 +179,39 @@ async fn main() -> Result<()> {
                 )
                 .await;
             } else if prompt.is_empty() {
-                repl::run_repl(
+                if use_tui {
+                    let factory = AgentFactory::new(
+                        provider,
+                        model,
+                        config.defaults.max_tokens,
+                        config.defaults.max_turns,
+                        config.defaults.context_limit,
+                        config.tools.clone(),
+                    );
+                    let store = SessionStore::new().ok();
+                    tui::run_tui_repl(&factory, store.as_ref()).await?;
+                } else {
+                    repl::run_repl(
+                        provider,
+                        model,
+                        config.defaults.max_tokens,
+                        config.defaults.max_turns,
+                        config.defaults.context_limit,
+                        &config.tools,
+                    )
+                    .await;
+                }
+            } else if use_tui {
+                let factory = AgentFactory::new(
                     provider,
                     model,
                     config.defaults.max_tokens,
                     config.defaults.max_turns,
                     config.defaults.context_limit,
-                    &config.tools,
-                )
-                .await;
+                    config.tools.clone(),
+                );
+                let store = SessionStore::new().ok();
+                tui::run_tui_oneshot(&factory, store.as_ref(), prompt).await?;
             } else {
                 repl::run_oneshot(
                     provider,

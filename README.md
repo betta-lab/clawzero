@@ -8,6 +8,7 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 
 ## Features
 
+- **Inline TUI** — Claude Code-style inline terminal UI that grows in-place (no full-screen takeover). Streaming text, tool cards, and status update live in the viewport; confirmed output scrolls into terminal history
 - **Streaming-first** — Real-time responses via SSE streaming
 - **Multi-provider** — Switch between Anthropic / OpenAI / OpenRouter / Ollama and more via config alone
 - **Extensible provider design** — Two protocol implementations (Anthropic Messages API + OpenAI Chat Completions API) cover all major providers. Adding a new provider requires zero code changes — just config
@@ -47,14 +48,17 @@ cargo install --path .
 ## Usage
 
 ```bash
-# One-shot
+# One-shot (inline TUI, shows result, exits automatically)
 clawzero "Write a fibonacci function in Rust"
 
 # Specify model
 clawzero --model openai/gpt-4o "Hello"
 
-# Interactive REPL
+# Interactive REPL (TUI mode — default when stdin is a TTY)
 clawzero chat
+
+# Plain text mode (no TUI)
+clawzero --no-tui chat
 
 # Resume a session
 clawzero --resume <session-id> "Continue from where we left off"
@@ -77,6 +81,21 @@ clawzero gateway discord
 # Start all configured gateways
 clawzero gateway
 ```
+
+### TUI Keybindings
+
+| Key | Action |
+|-----|--------|
+| Enter | Send message |
+| Ctrl+J | Insert newline |
+| Ctrl+A / Home | Move cursor to beginning of line |
+| Ctrl+E / End | Move cursor to end of line |
+| Ctrl+K | Delete from cursor to end of line |
+| Ctrl+W | Delete word before cursor |
+| Ctrl+C | Quit |
+| `/exit`, `/quit` | Quit |
+
+The TUI is enabled by default when stdin is a TTY. Use `--no-tui` to fall back to plain text mode. Piped input (`echo "hello" | clawzero`) automatically uses plain text mode. Past output scrolls into terminal history and can be viewed with your terminal's scrollback.
 
 ### Environment Variables
 
@@ -210,9 +229,16 @@ src/
 │   ├── event.rs        # AgentEvent (UI notification)
 │   ├── token.rs        # Token estimation (chars/4 heuristic)
 │   └── compaction.rs   # DropOldest message compaction strategy
-├── cli/                # CLI / REPL
-│   ├── args.rs         # clap arg definitions
-│   └── repl.rs         # Interactive, one-shot, & resume execution
+├── cli/                # CLI / REPL / TUI
+│   ├── args.rs         # clap arg definitions (--no-tui flag)
+│   ├── repl.rs         # Plain text mode (interactive, one-shot, resume)
+│   └── tui/            # ratatui-based inline TUI (Viewport::Inline)
+│       ├── mod.rs      # run_tui_repl(), run_tui_oneshot()
+│       ├── app.rs      # App state machine (mode, pending_inserts, input)
+│       ├── event.rs    # TuiEvent loop (terminal + agent + tick)
+│       ├── ui.rs       # Live viewport layout (streaming + status + input)
+│       ├── markdown.rs # Markdown → ratatui spans conversion
+│       └── widgets/    # chat helpers, status, input widgets
 ├── config/             # Configuration loading
 │   ├── types.rs        # AppConfig, GatewayConfig, ProviderConfig
 │   └── loader.rs       # TOML + env var merging
@@ -293,7 +319,15 @@ src/
   - Session-per-thread with persistent SessionMap
   - Rate-limited streaming message updates (BotEventHandler)
   - `clawzero gateway` runs all configured gateways concurrently
-- [ ] **Phase 4**: TBD
+- [x] **Phase 4**: Inline TUI
+  - Claude Code-style inline TUI (Viewport::Inline + insert_before)
+  - Confirmed output scrolls into terminal history; live viewport shows only active content
+  - Streaming text display with Markdown rendering
+  - Tool call cards with status indicators
+  - Spinner animation during thinking/tool execution
+  - Multi-line input (Ctrl+J for newline)
+  - `--no-tui` flag for plain text fallback
+  - Automatic plain text mode for non-TTY stdin (pipe support)
 
 ## License
 
