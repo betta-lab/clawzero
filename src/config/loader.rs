@@ -85,6 +85,7 @@ fn builtin_defaults() -> AppConfig {
         defaults: Default::default(),
         providers,
         tools: Vec::new(),
+        gateway: Default::default(),
     }
 }
 

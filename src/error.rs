@@ -38,4 +38,10 @@ pub enum ClawError {
 
     #[error("Auth error: {0}")]
     Auth(String),
+
+    #[error("Gateway error: {0}")]
+    Gateway(String),
+
+    #[error("WebSocket error: {0}")]
+    WebSocket(String),
 }

@@ -18,6 +18,7 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 - **Memory system** — Persistent MEMORY.md files (global + project-local) injected into system prompt
 - **Plugin tools** — Define custom bash/HTTP tools via TOML config
 - **Cloud auth** — Vertex AI (OAuth2 via gcloud) and AWS Bedrock (SigV4) authentication
+- **Gateway** — Run as Slack / Discord bot with `clawzero gateway`. Session-per-thread, streaming message updates, rate-limited
 
 ## Installation
 
@@ -66,6 +67,15 @@ clawzero sessions resume <session-id>
 
 # Show config
 clawzero config
+
+# Start Slack gateway
+clawzero gateway slack
+
+# Start Discord gateway
+clawzero gateway discord
+
+# Start all configured gateways
+clawzero gateway
 ```
 
 ### Environment Variables
@@ -79,6 +89,9 @@ clawzero config
 | `AWS_ACCESS_KEY_ID` | AWS credentials (for Bedrock) |
 | `AWS_SECRET_ACCESS_KEY` | AWS credentials (for Bedrock) |
 | `AWS_REGION` | AWS region (for Bedrock, default: `us-east-1`) |
+| `SLACK_APP_TOKEN` | Slack Socket Mode app token (xapp-...) |
+| `SLACK_BOT_TOKEN` | Slack bot token (xoxb-...) |
+| `DISCORD_BOT_TOKEN` | Discord bot token |
 
 ## Configuration
 
@@ -127,6 +140,27 @@ region = "us-central1"
 # region = "us-east-1"
 ```
 
+### Gateway Configuration
+
+```toml
+# Slack — requires Socket Mode enabled in Slack app settings
+[gateway.slack]
+app_token_env = "SLACK_APP_TOKEN"   # xapp-... (Socket Mode)
+bot_token_env = "SLACK_BOT_TOKEN"   # xoxb-... (Web API)
+
+# Discord — requires Message Content Intent enabled
+[gateway.discord]
+bot_token_env = "DISCORD_BOT_TOKEN"
+```
+
+Tokens can also be set directly:
+
+```toml
+[gateway.slack]
+app_token = "xapp-1-..."
+bot_token = "xoxb-..."
+```
+
 ### Plugin Tools
 
 Define custom tools in your config file:
@@ -160,9 +194,18 @@ description = "Project directory path"
 ## Architecture
 
 ```
+CLI ─────────────────→ Agent (direct)
+
+clawzero gateway
+  ├─ SlackGateway ──→ AgentFactory + SessionMap ──→ Agent (per thread)
+  └─ DiscordGateway ─→ AgentFactory + SessionMap ──→ Agent (per thread)
+```
+
+```
 src/
 ├── agent/              # Agent loop (Think → ToolCall → Observe)
 │   ├── loop.rs         # Core loop with session saving
+│   ├── factory.rs      # AgentFactory (shared Agent creation)
 │   ├── context.rs      # Conversation context + compaction
 │   ├── event.rs        # AgentEvent (UI notification)
 │   ├── token.rs        # Token estimation (chars/4 heuristic)
@@ -171,8 +214,17 @@ src/
 │   ├── args.rs         # clap arg definitions
 │   └── repl.rs         # Interactive, one-shot, & resume execution
 ├── config/             # Configuration loading
-│   ├── types.rs        # AppConfig, ProviderConfig, AuthType
+│   ├── types.rs        # AppConfig, GatewayConfig, ProviderConfig
 │   └── loader.rs       # TOML + env var merging
+├── gateway/            # Multi-platform bot gateway
+│   ├── session_map.rs  # ThreadKey → SessionID persistent mapping
+│   ├── event_handler.rs # AgentEvent → text with rate limiting
+│   ├── slack/          # Slack integration (feature: slack)
+│   │   ├── socket.rs   # Socket Mode WebSocket connection
+│   │   ├── api.rs      # Web API (post/update/react)
+│   │   └── handler.rs  # SlackGateway orchestration
+│   └── discord/        # Discord integration (feature: discord)
+│       └── handler.rs  # serenity EventHandler + DiscordGateway
 ├── memory/             # Persistent memory system
 │   └── store.rs        # MEMORY.md read/write (global + project)
 ├── model/              # Provider-agnostic types
@@ -219,6 +271,7 @@ src/
 - **Config-driven**: Adding a new provider is just a `[providers.xxx]` entry in TOML.
 - **Pin<Box<dyn Future>>**: Provider and Tool traits use `Pin<Box<dyn Future>>` instead of `async fn` for dyn compatibility (even in Rust 2024 edition, `async fn` in traits is not dyn-compatible).
 - **Thin HTTP abstraction**: reqwest + eventsource-stream with full control. No heavy framework dependencies.
+- **No Gateway trait**: Each platform is an async function, not a trait implementation. Shared via `AgentFactory` (Agent creation) and `SessionMap` (thread → session mapping) only.
 
 ## Roadmap
 
@@ -233,7 +286,14 @@ src/
   - Memory system (global + project-local MEMORY.md)
   - Plugin tool system (bash / HTTP with template substitution)
   - Vertex AI / Bedrock authentication (AuthHook trait)
-- [ ] **Phase 3**: Messaging channel integration
+- [x] **Phase 3**: Gateway — Multi-platform simultaneous connections
+  - AgentFactory for shared Agent creation
+  - Slack Socket Mode (WebSocket + Web API)
+  - Discord bot (serenity EventHandler)
+  - Session-per-thread with persistent SessionMap
+  - Rate-limited streaming message updates (BotEventHandler)
+  - `clawzero gateway` runs all configured gateways concurrently
+- [ ] **Phase 4**: TBD
 
 ## License
 

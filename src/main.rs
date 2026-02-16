@@ -1,10 +1,14 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
+use clawzero::agent::factory::AgentFactory;
 use clawzero::cli::args::{Cli, Command, SessionAction};
 use clawzero::cli::repl;
 use clawzero::config::loader::load_config;
+use clawzero::gateway::session_map::SessionMap;
 use clawzero::provider::registry::ProviderRegistry;
 use clawzero::session::store::SessionStore;
 
@@ -96,6 +100,58 @@ async fn main() -> Result<()> {
                 );
             }
         }
+        Some(Command::Gateway { platform }) => {
+            let has_slack = config.gateway.slack.is_some();
+            let has_discord = config.gateway.discord.is_some();
+
+            let factory = Arc::new(AgentFactory::new(
+                provider,
+                model,
+                config.defaults.max_tokens,
+                config.defaults.max_turns,
+                config.defaults.context_limit,
+                config.tools.clone(),
+            ));
+            let session_map = Arc::new(SessionMap::new()?);
+
+            match platform.as_deref() {
+                Some("slack") if !has_slack => {
+                    eprintln!("Slack gateway not configured. Add [gateway.slack] to config.");
+                }
+                Some("discord") if !has_discord => {
+                    eprintln!("Discord gateway not configured. Add [gateway.discord] to config.");
+                }
+                Some("slack") => {
+                    let session_store = SessionStore::new()?;
+                    clawzero::gateway::slack::handler::run_slack_gateway(
+                        factory,
+                        session_store,
+                        session_map,
+                        config.gateway.slack.as_ref().unwrap(),
+                    )
+                    .await?;
+                }
+                Some("discord") => {
+                    let session_store = SessionStore::new()?;
+                    clawzero::gateway::discord::handler::run_discord_gateway(
+                        factory,
+                        session_store,
+                        session_map,
+                        config.gateway.discord.as_ref().unwrap(),
+                    )
+                    .await?;
+                }
+                None if !has_slack && !has_discord => {
+                    eprintln!("No gateways configured. Add [gateway.slack] or [gateway.discord] to config.");
+                }
+                None => {
+                    run_all_gateways(factory, session_map, &config).await?;
+                }
+                Some(other) => {
+                    eprintln!("Unknown gateway platform: {other}. Use 'slack' or 'discord'.");
+                }
+            }
+        }
         Some(Command::Sessions { .. }) => unreachable!(), // Handled above
         None => {
             let prompt = cli.prompt.join(" ");
@@ -138,4 +194,60 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Run all configured gateways concurrently using tokio::select!
+async fn run_all_gateways(
+    factory: Arc<AgentFactory>,
+    session_map: Arc<SessionMap>,
+    config: &clawzero::config::types::AppConfig,
+) -> Result<()> {
+    let slack_fut = async {
+        if let Some(ref slack_config) = config.gateway.slack {
+            let session_store = SessionStore::new()?;
+            return clawzero::gateway::slack::handler::run_slack_gateway(
+                Arc::clone(&factory),
+                session_store,
+                Arc::clone(&session_map),
+                slack_config,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e));
+        }
+        std::future::pending::<Result<()>>().await
+    };
+
+    let discord_fut = async {
+        if let Some(ref discord_config) = config.gateway.discord {
+            let session_store = SessionStore::new()?;
+            return clawzero::gateway::discord::handler::run_discord_gateway(
+                Arc::clone(&factory),
+                session_store,
+                Arc::clone(&session_map),
+                discord_config,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e));
+        }
+        std::future::pending::<Result<()>>().await
+    };
+
+    println!("Starting gateways...");
+    if config.gateway.slack.is_some() {
+        println!("  - Slack (Socket Mode)");
+    }
+    if config.gateway.discord.is_some() {
+        println!("  - Discord");
+    }
+
+    tokio::select! {
+        result = slack_fut => {
+            eprintln!("Slack gateway exited");
+            result
+        }
+        result = discord_fut => {
+            eprintln!("Discord gateway exited");
+            result
+        }
+    }
 }

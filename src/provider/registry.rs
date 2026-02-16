@@ -123,6 +123,7 @@ mod tests {
             defaults: DefaultsConfig::default(),
             providers,
             tools: Vec::new(),
+            gateway: Default::default(),
         };
 
         // Safety: test-only, no concurrent env var access expected
@@ -161,6 +162,7 @@ mod tests {
             defaults: DefaultsConfig::default(),
             providers,
             tools: Vec::new(),
+            gateway: Default::default(),
         };
 
         let registry = ProviderRegistry::from_config(&config).unwrap();
@@ -191,6 +193,7 @@ mod tests {
             defaults: DefaultsConfig::default(),
             providers,
             tools: Vec::new(),
+            gateway: Default::default(),
         };
 
         match ProviderRegistry::from_config(&config) {
@@ -223,6 +226,7 @@ mod tests {
             defaults: DefaultsConfig::default(),
             providers,
             tools: Vec::new(),
+            gateway: Default::default(),
         };
 
         let registry = ProviderRegistry::from_config(&config).unwrap();

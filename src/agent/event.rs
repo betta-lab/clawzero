@@ -1,7 +1,7 @@
 use crate::model::response::Usage;
 
 /// Events emitted by the agent loop to the UI layer.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AgentEvent {
     /// Streaming text from the model
     TextDelta(String),

@@ -13,6 +13,66 @@ pub struct AppConfig {
     /// Plugin tool definitions.
     #[serde(default)]
     pub tools: Vec<PluginToolConfig>,
+    /// Gateway configuration for Slack/Discord bots.
+    #[serde(default)]
+    pub gateway: GatewayConfig,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct GatewayConfig {
+    pub slack: Option<SlackConfig>,
+    pub discord: Option<DiscordConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SlackConfig {
+    /// Socket Mode app token (xapp-...).
+    pub app_token: Option<String>,
+    /// Env var name for app token.
+    pub app_token_env: Option<String>,
+    /// Bot token (xoxb-...).
+    pub bot_token: Option<String>,
+    /// Env var name for bot token.
+    pub bot_token_env: Option<String>,
+}
+
+impl SlackConfig {
+    /// Resolve app token from direct value or env var.
+    pub fn resolve_app_token(&self) -> Option<String> {
+        self.app_token.clone().or_else(|| {
+            self.app_token_env
+                .as_ref()
+                .and_then(|env| std::env::var(env).ok())
+        })
+    }
+
+    /// Resolve bot token from direct value or env var.
+    pub fn resolve_bot_token(&self) -> Option<String> {
+        self.bot_token.clone().or_else(|| {
+            self.bot_token_env
+                .as_ref()
+                .and_then(|env| std::env::var(env).ok())
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DiscordConfig {
+    /// Discord bot token.
+    pub bot_token: Option<String>,
+    /// Env var name for bot token.
+    pub bot_token_env: Option<String>,
+}
+
+impl DiscordConfig {
+    /// Resolve bot token from direct value or env var.
+    pub fn resolve_bot_token(&self) -> Option<String> {
+        self.bot_token.clone().or_else(|| {
+            self.bot_token_env
+                .as_ref()
+                .and_then(|env| std::env::var(env).ok())
+        })
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -87,4 +147,46 @@ pub enum ProtocolType {
 pub enum AuthType {
     Vertex,
     Bedrock,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_with_gateway_parses() {
+        let toml_str = r#"
+[gateway.slack]
+app_token = "xapp-test"
+bot_token = "xoxb-test"
+
+[gateway.discord]
+bot_token = "discord-test"
+"#;
+        let config: AppConfig = toml::from_str(toml_str).unwrap();
+        let slack = config.gateway.slack.unwrap();
+        assert_eq!(slack.app_token.unwrap(), "xapp-test");
+        assert_eq!(slack.bot_token.unwrap(), "xoxb-test");
+        let discord = config.gateway.discord.unwrap();
+        assert_eq!(discord.bot_token.unwrap(), "discord-test");
+    }
+
+    #[test]
+    fn config_without_gateway_defaults() {
+        let toml_str = r#"
+[defaults]
+max_tokens = 4096
+"#;
+        let config: AppConfig = toml::from_str(toml_str).unwrap();
+        assert!(config.gateway.slack.is_none());
+        assert!(config.gateway.discord.is_none());
+    }
+
+    #[test]
+    fn gateway_error_display() {
+        let err = crate::error::ClawError::Gateway("test error".into());
+        assert_eq!(err.to_string(), "Gateway error: test error");
+        let err = crate::error::ClawError::WebSocket("ws error".into());
+        assert_eq!(err.to_string(), "WebSocket error: ws error");
+    }
 }
