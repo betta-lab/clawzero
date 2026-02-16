@@ -24,57 +24,15 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 
 Performance comparison vs Claude Code and OpenClaw (all using **Sonnet 4.5** model):
 
-### 🚀 Startup Time (`--help`, no API calls)
+<p align="center">
+  <img src="docs/img/bench/startup_time.png" alt="Startup Time" width="45%" />
+  <img src="docs/img/bench/e2e_time.png" alt="E2E Time" width="45%" />
+</p>
 
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#10b981', 'primaryTextColor':'#fff', 'primaryBorderColor':'#059669', 'lineColor':'#6366f1', 'secondaryColor':'#ec4899', 'tertiaryColor':'#f59e0b'}}}%%
-xychart-beta
-    title "Startup Time (lower is better)"
-    x-axis ["🦀 clawzero", "🤖 Claude Code", "🦞 OpenClaw"]
-    y-axis "milliseconds" 0 --> 1500
-    bar [2.16, 838, 1425]
-```
-
-<p align="center"><b>clawzero: 2ms</b> · Claude Code: 838ms (388x slower) · OpenClaw: 1,425ms (659x slower)</p>
-
-### ⚡ E2E Response Time ("What is 1+1?")
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#10b981', 'primaryTextColor':'#fff', 'primaryBorderColor':'#059669', 'lineColor':'#6366f1', 'secondaryColor':'#ec4899', 'tertiaryColor':'#f59e0b'}}}%%
-xychart-beta
-    title "End-to-End Time (lower is better)"
-    x-axis ["🦀 clawzero", "🤖 Claude Code", "🦞 OpenClaw"]
-    y-axis "milliseconds" 0 --> 20000
-    bar [2100, 4674, 18718]
-```
-
-<p align="center"><b>clawzero: 2.1s</b> · Claude Code: 4.7s (2.2x slower) · OpenClaw: 18.7s (8.9x slower)</p>
-
-### ⏱️ Time to First Token (TTFT)
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#10b981', 'primaryTextColor':'#fff', 'primaryBorderColor':'#059669', 'lineColor':'#6366f1', 'secondaryColor':'#ec4899', 'tertiaryColor':'#f59e0b'}}}%%
-xychart-beta
-    title "Time to First Token (lower is better)"
-    x-axis ["🦀 clawzero", "🤖 Claude Code", "🦞 OpenClaw"]
-    y-axis "milliseconds" 0 --> 10000
-    bar [1689, 3232, 9611]
-```
-
-<p align="center"><b>clawzero: 1.7s</b> · Claude Code: 3.2s (1.9x slower) · OpenClaw: 9.6s (5.7x slower)</p>
-
-### 💾 Memory Usage (simple scenario)
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#10b981', 'primaryTextColor':'#fff', 'primaryBorderColor':'#059669', 'lineColor':'#6366f1', 'secondaryColor':'#ec4899', 'tertiaryColor':'#f59e0b'}}}%%
-xychart-beta
-    title "Peak Memory (lower is better)"
-    x-axis ["🦀 clawzero", "🤖 Claude Code", "🦞 OpenClaw"]
-    y-axis "megabytes" 0 --> 400
-    bar [10.1, 242, 398]
-```
-
-<p align="center"><b>clawzero: 10 MB</b> · Claude Code: 242 MB (24x more) · OpenClaw: 398 MB (39x more)</p>
+<p align="center">
+  <img src="docs/img/bench/ttft.png" alt="TTFT" width="45%" />
+  <img src="docs/img/bench/memory.png" alt="Memory" width="45%" />
+</p>
 
 ### Summary Table
 
