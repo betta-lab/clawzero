@@ -4,11 +4,20 @@
 
 ### Initialize configuration
 
-Set up clawzero interactively — prompts for API keys and generates `~/.config/clawzero/config.toml`:
+Set up clawzero interactively — select providers, configure API keys, choose a default model, and optionally set up gateways. Generates `~/.config/clawzero/config.toml`:
 
 ```bash
 clawzero init
 ```
+
+The interactive wizard guides you through:
+
+1. **Provider selection** — Choose from Anthropic, OpenAI, OpenRouter, Ollama (local), Vertex AI (Google Cloud), and Bedrock (AWS)
+2. **Per-provider configuration** — API keys (masked input), base URLs, regions, and project IDs as needed
+3. **Default model selection** — Pick from models available in your selected providers
+4. **Gateway configuration** (optional) — Set up Slack, Discord, or WebUI bot gateways
+
+If an API key is left empty, the config will reference the corresponding environment variable (e.g. `ANTHROPIC_API_KEY`) instead.
 
 ### One-shot mode
 

@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     if let Some(Command::Init) = &cli.command {
         let config_path = global_config_path()
             .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?;
-        let mut prompter = StdioPrompter;
+        let mut prompter = StdioPrompter::new();
         run_init(&mut prompter, &config_path)?;
         return Ok(());
     }
