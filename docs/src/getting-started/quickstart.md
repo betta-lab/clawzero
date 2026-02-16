@@ -2,13 +2,21 @@
 
 ## 1. Set up your API key
 
-clawzero uses Anthropic as the default provider. Set your API key:
+The easiest way to get started is with `clawzero init`:
+
+```bash
+clawzero init
+```
+
+This interactively prompts for your API keys and generates `~/.config/clawzero/config.toml`.
+
+Alternatively, set your API key via environment variable:
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-Or use any other supported provider by setting the appropriate key (see [Environment Variables](../configuration/environment-variables.md)).
+See [Environment Variables](../configuration/environment-variables.md) for other providers.
 
 ## 2. Run your first prompt
 

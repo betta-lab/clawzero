@@ -53,6 +53,15 @@ fn unknown_provider_errors() {
         .stderr(predicate::str::contains("Unknown provider"));
 }
 
+#[test]
+fn init_subcommand_in_help() {
+    clawzero()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("init"));
+}
+
 // --- LLM integration tests ---
 
 #[test]

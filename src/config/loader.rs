@@ -38,7 +38,7 @@ pub fn load_config() -> Result<AppConfig, ClawError> {
     Ok(config)
 }
 
-fn global_config_path() -> Option<PathBuf> {
+pub fn global_config_path() -> Option<PathBuf> {
     dirs::config_dir().map(|d| d.join("clawzero").join("config.toml"))
 }
 

@@ -24,7 +24,7 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 
 ```bash
 cargo install --path .
-export ANTHROPIC_API_KEY="sk-ant-..."
+clawzero init          # Interactive setup — generates config with API keys
 clawzero "Hello, world!"
 ```
 

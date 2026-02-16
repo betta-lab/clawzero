@@ -2,6 +2,14 @@
 
 ## Commands
 
+### Initialize configuration
+
+Set up clawzero interactively — prompts for API keys and generates `~/.config/clawzero/config.toml`:
+
+```bash
+clawzero init
+```
+
 ### One-shot mode
 
 Send a prompt, get a response, and exit:

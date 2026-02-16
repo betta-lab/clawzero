@@ -7,9 +7,10 @@ use tracing_subscriber::EnvFilter;
 
 use clawzero::agent::factory::AgentFactory;
 use clawzero::cli::args::{Cli, Command, SessionAction};
+use clawzero::cli::init::{StdioPrompter, run_init};
 use clawzero::cli::repl;
 use clawzero::cli::tui;
-use clawzero::config::loader::load_config;
+use clawzero::config::loader::{global_config_path, load_config};
 use clawzero::gateway::session_map::SessionMap;
 use clawzero::provider::registry::ProviderRegistry;
 use clawzero::session::store::SessionStore;
@@ -22,6 +23,16 @@ async fn main() -> Result<()> {
         .init();
 
     let cli = Cli::parse();
+
+    // Handle init before loading config (init creates the config)
+    if let Some(Command::Init) = &cli.command {
+        let config_path = global_config_path()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?;
+        let mut prompter = StdioPrompter;
+        run_init(&mut prompter, &config_path)?;
+        return Ok(());
+    }
+
     let config = load_config()?;
 
     // Handle session subcommands (don't need provider)
@@ -178,6 +189,7 @@ async fn main() -> Result<()> {
                 }
             }
         }
+        Some(Command::Init) => unreachable!(), // Handled above
         Some(Command::Sessions { .. }) => unreachable!(), // Handled above
         None => {
             let prompt = cli.prompt.join(" ");
