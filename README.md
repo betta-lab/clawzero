@@ -19,7 +19,8 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 - **Memory system** — Persistent MEMORY.md files (global + project-local) injected into system prompt
 - **Plugin tools** — Define custom bash/HTTP tools via TOML config
 - **Cloud auth** — Vertex AI (OAuth2 via gcloud) and AWS Bedrock (SigV4) authentication
-- **Gateway** — Run as Slack / Discord bot with `clawzero gateway`. Session-per-thread, streaming message updates, rate-limited
+- **Gateway** — Run as Slack / Discord bot or Web UI with `clawzero gateway`. Session-per-thread, streaming message updates, rate-limited
+- **Web UI** — Browser-based chat interface via `clawzero gateway webui`. axum + WebSocket, streaming responses, Markdown rendering, tool call visualization, session management
 
 ## Installation
 
@@ -77,6 +78,9 @@ clawzero gateway slack
 
 # Start Discord gateway
 clawzero gateway discord
+
+# Start Web UI gateway
+clawzero gateway webui
 
 # Start all configured gateways
 clawzero gateway
@@ -172,6 +176,13 @@ bot_token_env = "SLACK_BOT_TOKEN"   # xoxb-... (Web API)
 bot_token_env = "DISCORD_BOT_TOKEN"
 ```
 
+```toml
+# Web UI — browser-based chat interface
+[gateway.webui]
+host = "127.0.0.1"  # default
+port = 3000          # default
+```
+
 Tokens can also be set directly:
 
 ```toml
@@ -217,7 +228,8 @@ CLI ─────────────────→ Agent (direct)
 
 clawzero gateway
   ├─ SlackGateway ──→ AgentFactory + SessionMap ──→ Agent (per thread)
-  └─ DiscordGateway ─→ AgentFactory + SessionMap ──→ Agent (per thread)
+  ├─ DiscordGateway ─→ AgentFactory + SessionMap ──→ Agent (per thread)
+  └─ WebuiGateway ──→ AgentFactory + SessionMap ──→ Agent (per connection)
 ```
 
 ```
@@ -249,8 +261,12 @@ src/
 │   │   ├── socket.rs   # Socket Mode WebSocket connection
 │   │   ├── api.rs      # Web API (post/update/react)
 │   │   └── handler.rs  # SlackGateway orchestration
-│   └── discord/        # Discord integration (feature: discord)
-│       └── handler.rs  # serenity EventHandler + DiscordGateway
+│   ├── discord/        # Discord integration (feature: discord)
+│   │   └── handler.rs  # serenity EventHandler + DiscordGateway
+│   └── webui/          # Web UI gateway (axum + WebSocket)
+│       ├── handler.rs  # HTTP server + WebSocket handler
+│       ├── messages.rs # ClientMessage / ServerEvent types
+│       └── ui.html     # Single-file chat UI (embedded via include_str!)
 ├── memory/             # Persistent memory system
 │   └── store.rs        # MEMORY.md read/write (global + project)
 ├── model/              # Provider-agnostic types
@@ -298,6 +314,7 @@ src/
 - **Pin<Box<dyn Future>>**: Provider and Tool traits use `Pin<Box<dyn Future>>` instead of `async fn` for dyn compatibility (even in Rust 2024 edition, `async fn` in traits is not dyn-compatible).
 - **Thin HTTP abstraction**: reqwest + eventsource-stream with full control. No heavy framework dependencies.
 - **No Gateway trait**: Each platform is an async function, not a trait implementation. Shared via `AgentFactory` (Agent creation) and `SessionMap` (thread → session mapping) only.
+- **Embedded UI**: Web UI is a single HTML file with inline CSS/JS, compiled into the binary via `include_str!`. Zero external assets, zero build step.
 
 ## Roadmap
 
@@ -328,6 +345,12 @@ src/
   - Multi-line input (Ctrl+J for newline)
   - `--no-tui` flag for plain text fallback
   - Automatic plain text mode for non-TTY stdin (pipe support)
+- [x] **Phase 5**: Web UI gateway
+  - Browser-based chat via `clawzero gateway webui`
+  - axum + WebSocket server with embedded single-file HTML UI
+  - Streaming text with Markdown rendering, tool call visualization
+  - Session management (create / list / resume)
+  - Runs alongside Slack / Discord in `clawzero gateway`
 
 ## License
 

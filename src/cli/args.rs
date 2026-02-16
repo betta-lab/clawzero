@@ -34,9 +34,9 @@ pub enum Command {
         #[command(subcommand)]
         action: SessionAction,
     },
-    /// Start gateway (Slack/Discord bot)
+    /// Start gateway (Slack/Discord/WebUI bot)
     Gateway {
-        /// Platform to run: slack, discord (omit for all configured)
+        /// Platform to run: slack, discord, webui (omit for all configured)
         platform: Option<String>,
     },
 }

@@ -22,6 +22,7 @@ pub struct AppConfig {
 pub struct GatewayConfig {
     pub slack: Option<SlackConfig>,
     pub discord: Option<DiscordConfig>,
+    pub webui: Option<WebuiConfig>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -72,6 +73,24 @@ impl DiscordConfig {
                 .as_ref()
                 .and_then(|env| std::env::var(env).ok())
         })
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WebuiConfig {
+    /// Bind host (default: "127.0.0.1").
+    pub host: Option<String>,
+    /// Bind port (default: 3000).
+    pub port: Option<u16>,
+}
+
+impl WebuiConfig {
+    pub fn host(&self) -> &str {
+        self.host.as_deref().unwrap_or("127.0.0.1")
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port.unwrap_or(3000)
     }
 }
 
@@ -180,6 +199,31 @@ max_tokens = 4096
         let config: AppConfig = toml::from_str(toml_str).unwrap();
         assert!(config.gateway.slack.is_none());
         assert!(config.gateway.discord.is_none());
+        assert!(config.gateway.webui.is_none());
+    }
+
+    #[test]
+    fn config_with_webui_gateway_parses() {
+        let toml_str = r#"
+[gateway.webui]
+host = "0.0.0.0"
+port = 8080
+"#;
+        let config: AppConfig = toml::from_str(toml_str).unwrap();
+        let webui = config.gateway.webui.unwrap();
+        assert_eq!(webui.host(), "0.0.0.0");
+        assert_eq!(webui.port(), 8080);
+    }
+
+    #[test]
+    fn webui_config_defaults() {
+        let toml_str = r#"
+[gateway.webui]
+"#;
+        let config: AppConfig = toml::from_str(toml_str).unwrap();
+        let webui = config.gateway.webui.unwrap();
+        assert_eq!(webui.host(), "127.0.0.1");
+        assert_eq!(webui.port(), 3000);
     }
 
     #[test]

@@ -111,6 +111,7 @@ async fn main() -> Result<()> {
         Some(Command::Gateway { platform }) => {
             let has_slack = config.gateway.slack.is_some();
             let has_discord = config.gateway.discord.is_some();
+            let has_webui = config.gateway.webui.is_some();
 
             let factory = Arc::new(AgentFactory::new(
                 provider,
@@ -125,6 +126,9 @@ async fn main() -> Result<()> {
             match platform.as_deref() {
                 Some("slack") if !has_slack => {
                     eprintln!("Slack gateway not configured. Add [gateway.slack] to config.");
+                }
+                Some("webui") if !has_webui => {
+                    eprintln!("WebUI gateway not configured. Add [gateway.webui] to config.");
                 }
                 Some("discord") if !has_discord => {
                     eprintln!("Discord gateway not configured. Add [gateway.discord] to config.");
@@ -149,16 +153,28 @@ async fn main() -> Result<()> {
                     )
                     .await?;
                 }
-                None if !has_slack && !has_discord => {
+                Some("webui") => {
+                    let session_store = SessionStore::new()?;
+                    clawzero::gateway::webui::handler::run_webui_gateway(
+                        factory,
+                        session_store,
+                        session_map,
+                        config.gateway.webui.as_ref().unwrap(),
+                    )
+                    .await?;
+                }
+                None if !has_slack && !has_discord && !has_webui => {
                     eprintln!(
-                        "No gateways configured. Add [gateway.slack] or [gateway.discord] to config."
+                        "No gateways configured. Add [gateway.slack], [gateway.discord], or [gateway.webui] to config."
                     );
                 }
                 None => {
                     run_all_gateways(factory, session_map, &config).await?;
                 }
                 Some(other) => {
-                    eprintln!("Unknown gateway platform: {other}. Use 'slack' or 'discord'.");
+                    eprintln!(
+                        "Unknown gateway platform: {other}. Use 'slack', 'discord', or 'webui'."
+                    );
                 }
             }
         }
@@ -266,12 +282,30 @@ async fn run_all_gateways(
         std::future::pending::<Result<()>>().await
     };
 
+    let webui_fut = async {
+        if let Some(ref webui_config) = config.gateway.webui {
+            let session_store = SessionStore::new()?;
+            return clawzero::gateway::webui::handler::run_webui_gateway(
+                Arc::clone(&factory),
+                session_store,
+                Arc::clone(&session_map),
+                webui_config,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e));
+        }
+        std::future::pending::<Result<()>>().await
+    };
+
     println!("Starting gateways...");
     if config.gateway.slack.is_some() {
         println!("  - Slack (Socket Mode)");
     }
     if config.gateway.discord.is_some() {
         println!("  - Discord");
+    }
+    if config.gateway.webui.is_some() {
+        println!("  - WebUI (HTTP + WebSocket)");
     }
 
     tokio::select! {
@@ -281,6 +315,10 @@ async fn run_all_gateways(
         }
         result = discord_fut => {
             eprintln!("Discord gateway exited");
+            result
+        }
+        result = webui_fut => {
+            eprintln!("WebUI gateway exited");
             result
         }
     }
