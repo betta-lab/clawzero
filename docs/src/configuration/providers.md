@@ -44,6 +44,16 @@ base_url = "https://openrouter.ai/api"
 api_key_env = "OPENROUTER_API_KEY"
 ```
 
+Available models via `clawzero init`:
+
+- `anthropic/claude-opus-4.6`, `anthropic/claude-sonnet-4.5`, `anthropic/claude-haiku-4.5`
+- `google/gemini-2.5-pro`, `google/gemini-2.5-flash`
+- `deepseek/deepseek-r1`, `deepseek/deepseek-v3.2`
+- `meta-llama/llama-3.3-70b-instruct`
+- `minimax/minimax-m2.5`
+- `moonshotai/kimi-k2.5`
+- `z-ai/glm-5`
+
 ## Ollama (local)
 
 ```toml

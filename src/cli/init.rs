@@ -81,7 +81,11 @@ const PROVIDERS: &[ProviderMeta] = &[
             "google/gemini-2.5-pro",
             "google/gemini-2.5-flash",
             "deepseek/deepseek-r1",
+            "deepseek/deepseek-v3.2",
             "meta-llama/llama-3.3-70b-instruct",
+            "minimax/minimax-m2.5",
+            "moonshotai/kimi-k2.5",
+            "z-ai/glm-5",
         ],
     },
     ProviderMeta {
@@ -1448,6 +1452,33 @@ mod tests {
         let toml = generate_config_toml(&answers);
         assert!(toml.contains("[providers.anthropic]"));
         assert!(toml.contains("api_key = \"sk-ant-oat01-test-token-123\""));
+    }
+
+    #[test]
+    fn test_openrouter_models_include_all_supported() {
+        let openrouter = PROVIDERS
+            .iter()
+            .find(|p| p.name == "openrouter")
+            .expect("openrouter provider must exist");
+        let expected = &[
+            "anthropic/claude-opus-4.6",
+            "anthropic/claude-sonnet-4.5",
+            "anthropic/claude-haiku-4.5",
+            "google/gemini-2.5-pro",
+            "google/gemini-2.5-flash",
+            "deepseek/deepseek-r1",
+            "deepseek/deepseek-v3.2",
+            "meta-llama/llama-3.3-70b-instruct",
+            "minimax/minimax-m2.5",
+            "moonshotai/kimi-k2.5",
+            "z-ai/glm-5",
+        ];
+        for model in expected {
+            assert!(
+                openrouter.models.contains(model),
+                "openrouter should contain model: {model}"
+            );
+        }
     }
 
     #[test]
