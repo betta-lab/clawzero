@@ -1,11 +1,24 @@
 #[derive(Debug, Clone)]
 pub enum StreamEvent {
-    MessageStart { id: String, model: String },
-    TextDelta { text: String },
-    ToolUseStart { id: String, name: String },
-    ToolInputDelta { partial_json: String },
+    MessageStart {
+        id: String,
+        model: String,
+    },
+    TextDelta {
+        text: String,
+    },
+    ToolUseStart {
+        id: String,
+        name: String,
+    },
+    ToolInputDelta {
+        partial_json: String,
+    },
     ToolUseEnd,
-    MessageEnd { stop_reason: StopReason, usage: Usage },
+    MessageEnd {
+        stop_reason: StopReason,
+        usage: Usage,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

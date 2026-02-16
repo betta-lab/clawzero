@@ -280,10 +280,7 @@ mod tests {
     #[test]
     fn format_file_edit_path() {
         let input = json!({"path": "src/lib.rs", "old_text": "a", "new_text": "b"});
-        assert_eq!(
-            format_tool_input("file_edit", &input),
-            "path: src/lib.rs"
-        );
+        assert_eq!(format_tool_input("file_edit", &input), "path: src/lib.rs");
     }
 
     #[test]

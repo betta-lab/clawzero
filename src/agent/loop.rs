@@ -4,7 +4,7 @@ use futures_util::StreamExt;
 
 use crate::agent::context::ConversationContext;
 use crate::agent::event::AgentEvent;
-use crate::agent::token::{estimate_context_tokens, ContextLimits};
+use crate::agent::token::{ContextLimits, estimate_context_tokens};
 use crate::model::message::{ContentBlock, Message, Role};
 use crate::model::response::{StopReason, StreamEvent, Usage};
 use crate::provider::traits::Provider;
@@ -90,11 +90,7 @@ impl Agent {
 
     /// Run the agent loop for a user prompt.
     /// Calls the callback for each event so the UI can render in real-time.
-    pub async fn run(
-        &mut self,
-        user_input: String,
-        mut on_event: impl FnMut(&AgentEvent),
-    ) {
+    pub async fn run(&mut self, user_input: String, mut on_event: impl FnMut(&AgentEvent)) {
         self.context.push_user_message(user_input.clone());
 
         // Save user message to session
@@ -108,16 +104,10 @@ impl Agent {
         for _turn in 0..self.max_turns {
             // Auto-compact context if approaching limits
             if self.context.needs_compaction(&self.context_limits) {
-                let original_tokens = estimate_context_tokens(
-                    "",
-                    self.context.messages(),
-                );
+                let original_tokens = estimate_context_tokens("", self.context.messages());
                 let messages_dropped = self.context.compact(&self.context_limits);
                 if messages_dropped > 0 {
-                    let compacted_tokens = estimate_context_tokens(
-                        "",
-                        self.context.messages(),
-                    );
+                    let compacted_tokens = estimate_context_tokens("", self.context.messages());
                     on_event(&AgentEvent::ContextCompacted {
                         original_tokens,
                         compacted_tokens,
@@ -213,9 +203,7 @@ impl Agent {
 
             // Flush remaining text
             if !current_text.is_empty() {
-                assistant_blocks.push(ContentBlock::Text {
-                    text: current_text,
-                });
+                assistant_blocks.push(ContentBlock::Text { text: current_text });
             }
 
             // Flush any remaining tool (shouldn't happen but defensive)

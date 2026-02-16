@@ -31,10 +31,7 @@ async fn main() -> Result<()> {
                 if sessions.is_empty() {
                     println!("No sessions found.");
                 } else {
-                    println!(
-                        "{:<30} {:<40} {:<8}",
-                        "SESSION ID", "MODEL", "MESSAGES"
-                    );
+                    println!("{:<30} {:<40} {:<8}", "SESSION ID", "MODEL", "MESSAGES");
                     for s in &sessions {
                         println!(
                             "{:<30} {:<40} {:<8}",
@@ -45,9 +42,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
             SessionAction::Resume { id } => {
-                let model_spec = cli
-                    .model
-                    .unwrap_or_else(|| config.defaults.model.clone());
+                let model_spec = cli.model.unwrap_or_else(|| config.defaults.model.clone());
                 let registry = ProviderRegistry::from_config(&config)?;
                 let (provider, model) = registry.resolve(&model_spec)?;
 
@@ -67,9 +62,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let model_spec = cli
-        .model
-        .unwrap_or_else(|| config.defaults.model.clone());
+    let model_spec = cli.model.unwrap_or_else(|| config.defaults.model.clone());
 
     let registry = ProviderRegistry::from_config(&config)?;
     let (provider, model) = registry.resolve(&model_spec)?;
@@ -94,10 +87,7 @@ async fn main() -> Result<()> {
             println!("Plugin tools: {}", config.tools.len());
             println!("Providers:");
             for (name, pconfig) in &config.providers {
-                println!(
-                    "  {name}: {:?} @ {}",
-                    pconfig.protocol, pconfig.base_url
-                );
+                println!("  {name}: {:?} @ {}", pconfig.protocol, pconfig.base_url);
             }
         }
         Some(Command::Gateway { platform }) => {
@@ -142,7 +132,9 @@ async fn main() -> Result<()> {
                     .await?;
                 }
                 None if !has_slack && !has_discord => {
-                    eprintln!("No gateways configured. Add [gateway.slack] or [gateway.discord] to config.");
+                    eprintln!(
+                        "No gateways configured. Add [gateway.slack] or [gateway.discord] to config."
+                    );
                 }
                 None => {
                     run_all_gateways(factory, session_map, &config).await?;

@@ -1,5 +1,5 @@
 use crate::agent::compaction::compact_messages;
-use crate::agent::token::{estimate_context_tokens, ContextLimits};
+use crate::agent::token::{ContextLimits, estimate_context_tokens};
 use crate::model::message::{ContentBlock, Message, Role};
 use crate::model::request::CompletionRequest;
 use crate::model::tool_schema::ToolDefinition;

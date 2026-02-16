@@ -124,7 +124,9 @@ impl Provider for AnthropicProtocol {
     fn complete<'a>(
         &'a self,
         request: &'a CompletionRequest,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<EventStream, ClawError>> + Send + 'a>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<EventStream, ClawError>> + Send + 'a>,
+    > {
         Box::pin(async move {
             let url = if let Some(ref hook) = self.auth_hook {
                 hook.override_url(&self.base_url, &request.model)
@@ -185,10 +187,7 @@ impl Provider for AnthropicProtocol {
     }
 }
 
-fn parse_anthropic_event(
-    event_type: &str,
-    data: &str,
-) -> Option<Result<StreamEvent, ClawError>> {
+fn parse_anthropic_event(event_type: &str, data: &str) -> Option<Result<StreamEvent, ClawError>> {
     let parsed: serde_json::Value = match serde_json::from_str(data) {
         Ok(v) => v,
         Err(e) => return Some(Err(ClawError::Json(e))),

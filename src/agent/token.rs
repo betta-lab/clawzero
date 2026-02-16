@@ -12,9 +12,7 @@ pub fn estimate_message_tokens(msg: &Message) -> u32 {
         tokens += match block {
             ContentBlock::Text { text } => estimate_tokens(text),
             ContentBlock::ToolUse { id, name, input } => {
-                estimate_tokens(id)
-                    + estimate_tokens(name)
-                    + estimate_tokens(&input.to_string())
+                estimate_tokens(id) + estimate_tokens(name) + estimate_tokens(&input.to_string())
             }
             ContentBlock::ToolResult { content, .. } => estimate_tokens(content),
         };

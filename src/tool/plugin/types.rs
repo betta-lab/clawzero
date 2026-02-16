@@ -86,7 +86,10 @@ mod tests {
     fn test_substitute_template() {
         let template = "git log --oneline -{{count}}";
         let params = serde_json::json!({"count": 10});
-        assert_eq!(substitute_template(template, &params), "git log --oneline -10");
+        assert_eq!(
+            substitute_template(template, &params),
+            "git log --oneline -10"
+        );
     }
 
     #[test]

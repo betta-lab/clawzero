@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use eventsource_stream::Eventsource;
-use futures_util::stream::Stream;
 use futures_util::StreamExt;
+use futures_util::stream::Stream;
 use reqwest::Response;
 
 use crate::error::ClawError;
@@ -26,9 +26,7 @@ pub struct SseEvent {
 }
 
 /// Parse a streaming HTTP response body as SSE events.
-pub fn parse_sse_stream(
-    response: Response,
-) -> impl Stream<Item = Result<SseEvent, ClawError>> {
+pub fn parse_sse_stream(response: Response) -> impl Stream<Item = Result<SseEvent, ClawError>> {
     response
         .bytes_stream()
         .eventsource()

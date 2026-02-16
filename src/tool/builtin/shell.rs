@@ -42,56 +42,56 @@ impl Tool for ShellTool {
         input: serde_json::Value,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ToolOutput> + Send + '_>> {
         Box::pin(async move {
-        let command = match input["command"].as_str() {
-            Some(c) => c,
-            None => {
-                return ToolOutput {
-                    content: "Missing 'command' parameter".to_string(),
-                    is_error: true,
-                };
-            }
-        };
-
-        let timeout_ms = input["timeout_ms"].as_u64().unwrap_or(120_000);
-
-        let result = tokio::time::timeout(
-            Duration::from_millis(timeout_ms),
-            Command::new("bash").arg("-c").arg(command).output(),
-        )
-        .await;
-
-        match result {
-            Ok(Ok(output)) => {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                let mut content = String::new();
-                if !stdout.is_empty() {
-                    content.push_str(&stdout);
+            let command = match input["command"].as_str() {
+                Some(c) => c,
+                None => {
+                    return ToolOutput {
+                        content: "Missing 'command' parameter".to_string(),
+                        is_error: true,
+                    };
                 }
-                if !stderr.is_empty() {
-                    if !content.is_empty() {
-                        content.push('\n');
+            };
+
+            let timeout_ms = input["timeout_ms"].as_u64().unwrap_or(120_000);
+
+            let result = tokio::time::timeout(
+                Duration::from_millis(timeout_ms),
+                Command::new("bash").arg("-c").arg(command).output(),
+            )
+            .await;
+
+            match result {
+                Ok(Ok(output)) => {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    let mut content = String::new();
+                    if !stdout.is_empty() {
+                        content.push_str(&stdout);
                     }
-                    content.push_str("[stderr]\n");
-                    content.push_str(&stderr);
+                    if !stderr.is_empty() {
+                        if !content.is_empty() {
+                            content.push('\n');
+                        }
+                        content.push_str("[stderr]\n");
+                        content.push_str(&stderr);
+                    }
+                    if content.is_empty() {
+                        content = "(no output)".to_string();
+                    }
+                    ToolOutput {
+                        content,
+                        is_error: !output.status.success(),
+                    }
                 }
-                if content.is_empty() {
-                    content = "(no output)".to_string();
-                }
-                ToolOutput {
-                    content,
-                    is_error: !output.status.success(),
-                }
+                Ok(Err(e)) => ToolOutput {
+                    content: format!("Failed to execute command: {e}"),
+                    is_error: true,
+                },
+                Err(_) => ToolOutput {
+                    content: format!("Command timed out after {timeout_ms}ms"),
+                    is_error: true,
+                },
             }
-            Ok(Err(e)) => ToolOutput {
-                content: format!("Failed to execute command: {e}"),
-                is_error: true,
-            },
-            Err(_) => ToolOutput {
-                content: format!("Command timed out after {timeout_ms}ms"),
-                is_error: true,
-            },
-        }
         })
     }
 }

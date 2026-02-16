@@ -47,10 +47,9 @@ impl SlackSocket {
             .await
             .map_err(|e| ClawError::WebSocket(format!("Failed to open connection: {e}")))?;
 
-        let body: serde_json::Value = resp
-            .json()
-            .await
-            .map_err(|e| ClawError::WebSocket(format!("Failed to parse connection response: {e}")))?;
+        let body: serde_json::Value = resp.json().await.map_err(|e| {
+            ClawError::WebSocket(format!("Failed to parse connection response: {e}"))
+        })?;
 
         if !body["ok"].as_bool().unwrap_or(false) {
             let err = body["error"].as_str().unwrap_or("unknown");
@@ -106,10 +105,7 @@ impl SlackSocket {
 
             // Check for disconnect request
             if envelope["type"].as_str() == Some("disconnect") {
-                let reason = envelope["reason"]
-                    .as_str()
-                    .unwrap_or("unknown")
-                    .to_string();
+                let reason = envelope["reason"].as_str().unwrap_or("unknown").to_string();
                 return Ok(Some((envelope_id, SlackEvent::Disconnect { reason })));
             }
 

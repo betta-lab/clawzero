@@ -4,8 +4,8 @@ use std::sync::Arc;
 use crate::config::loader::resolve_api_key;
 use crate::config::types::{AppConfig, AuthType, ProtocolType};
 use crate::error::ClawError;
-use crate::provider::auth::vertex::VertexAuth;
 use crate::provider::auth::AuthHook;
+use crate::provider::auth::vertex::VertexAuth;
 use crate::provider::protocol::anthropic::AnthropicProtocol;
 use crate::provider::protocol::openai::OpenAiProtocol;
 use crate::provider::traits::Provider;
@@ -135,7 +135,10 @@ mod tests {
         match ProviderRegistry::from_config(&config) {
             Err(e) => {
                 let err = e.to_string();
-                assert!(err.contains("project_id"), "Error should mention project_id: {err}");
+                assert!(
+                    err.contains("project_id"),
+                    "Error should mention project_id: {err}"
+                );
             }
             Ok(_) => panic!("Expected error for missing project_id"),
         }
@@ -199,7 +202,10 @@ mod tests {
         match ProviderRegistry::from_config(&config) {
             Err(e) => {
                 let err = e.to_string();
-                assert!(err.contains("bedrock"), "Error should mention bedrock feature: {err}");
+                assert!(
+                    err.contains("bedrock"),
+                    "Error should mention bedrock feature: {err}"
+                );
             }
             Ok(_) => panic!("Expected error for bedrock without feature"),
         }

@@ -7,7 +7,11 @@ use crate::model::message::{ContentBlock, Message, Role};
 /// - Always preserves at least the last `min_keep_pairs` user-assistant exchanges.
 /// - ToolUse and ToolResult messages are kept as pairs (never orphaned).
 /// - Prepends a truncation notice when messages are dropped.
-pub fn compact_messages(messages: &[Message], target_tokens: u32, min_keep_pairs: usize) -> Vec<Message> {
+pub fn compact_messages(
+    messages: &[Message],
+    target_tokens: u32,
+    min_keep_pairs: usize,
+) -> Vec<Message> {
     if messages.is_empty() {
         return Vec::new();
     }

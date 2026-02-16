@@ -60,9 +60,8 @@ impl MemoryStore {
     /// Write to global memory (replaces entire content).
     pub fn write_global(&self, content: &str) -> Result<(), ClawError> {
         if let Some(parent) = self.global_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                ClawError::Session(format!("Failed to create memory dir: {e}"))
-            })?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| ClawError::Session(format!("Failed to create memory dir: {e}")))?;
         }
         std::fs::write(&self.global_path, content)
             .map_err(|e| ClawError::Session(format!("Failed to write global memory: {e}")))

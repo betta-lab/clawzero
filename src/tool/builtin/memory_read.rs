@@ -56,10 +56,7 @@ mod tests {
     #[test]
     fn test_memory_read_tool_definition() {
         let dir = tempfile::tempdir().unwrap();
-        let store = Arc::new(MemoryStore::with_paths(
-            dir.path().join("MEMORY.md"),
-            None,
-        ));
+        let store = Arc::new(MemoryStore::with_paths(dir.path().join("MEMORY.md"), None));
         let tool = MemoryReadTool::new(store);
         let def = tool.definition();
         assert_eq!(def.name, "memory_read");

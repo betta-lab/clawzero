@@ -174,7 +174,9 @@ impl Provider for OpenAiProtocol {
     fn complete<'a>(
         &'a self,
         request: &'a CompletionRequest,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<EventStream, ClawError>> + Send + 'a>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<EventStream, ClawError>> + Send + 'a>,
+    > {
         Box::pin(async move {
             let url = if let Some(ref hook) = self.auth_hook {
                 hook.override_url(&self.base_url, &request.model)

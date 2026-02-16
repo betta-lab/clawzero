@@ -72,10 +72,7 @@ fn oneshot_nonempty_response() {
         .timeout(std::time::Duration::from_secs(30))
         .assert()
         .success()
-        .stdout(
-            predicate::str::contains("hello")
-                .or(predicate::str::contains("Hello")),
-        );
+        .stdout(predicate::str::contains("hello").or(predicate::str::contains("Hello")));
 }
 
 #[test]

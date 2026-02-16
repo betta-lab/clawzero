@@ -10,10 +10,12 @@ pub fn load_config() -> Result<AppConfig, ClawError> {
     // Load global config: ~/.config/clawzero/config.toml
     if let Some(global_path) = global_config_path() {
         if global_path.exists() {
-            let content = std::fs::read_to_string(&global_path)
-                .map_err(|e| ClawError::Config(format!("Failed to read {}: {e}", global_path.display())))?;
-            let file_config: AppConfig = toml::from_str(&content)
-                .map_err(|e| ClawError::Config(format!("Failed to parse {}: {e}", global_path.display())))?;
+            let content = std::fs::read_to_string(&global_path).map_err(|e| {
+                ClawError::Config(format!("Failed to read {}: {e}", global_path.display()))
+            })?;
+            let file_config: AppConfig = toml::from_str(&content).map_err(|e| {
+                ClawError::Config(format!("Failed to parse {}: {e}", global_path.display()))
+            })?;
             merge_config(&mut config, file_config);
         }
     }

@@ -7,7 +7,7 @@ use serenity::all::{
     Ready, UserId,
 };
 use serenity::async_trait;
-use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, mpsc};
 
 use crate::agent::event::AgentEvent;
 use crate::agent::factory::AgentFactory;
@@ -94,15 +94,8 @@ impl EventHandler for DiscordHandler {
         let http = ctx.http.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = run_discord_thread(
-                factory,
-                session_store,
-                session_map,
-                http,
-                rx,
-                thread_key,
-            )
-            .await
+            if let Err(e) =
+                run_discord_thread(factory, session_store, session_map, http, rx, thread_key).await
             {
                 tracing::error!("Discord thread error: {e}");
             }
@@ -171,7 +164,11 @@ async fn run_discord_thread(
                             text
                         };
                         let _ = channel_id
-                            .edit_message(&http_clone, placeholder_id, EditMessage::new().content(&truncated))
+                            .edit_message(
+                                &http_clone,
+                                placeholder_id,
+                                EditMessage::new().content(&truncated),
+                            )
                             .await;
                     }
                 }
@@ -184,7 +181,11 @@ async fn run_discord_thread(
                     final_text
                 };
                 let _ = channel_id
-                    .edit_message(&http_clone, placeholder_id, EditMessage::new().content(&truncated))
+                    .edit_message(
+                        &http_clone,
+                        placeholder_id,
+                        EditMessage::new().content(&truncated),
+                    )
                     .await;
             }
         });

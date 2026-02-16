@@ -177,9 +177,7 @@ async fn run_slack_thread(
 
     while let Some(text) = rx.recv().await {
         // Post a placeholder message
-        let msg_ts = api
-            .post_message(&channel, "...", Some(&thread_ts))
-            .await?;
+        let msg_ts = api.post_message(&channel, "...", Some(&thread_ts)).await?;
 
         // Channel for streaming events
         let (event_tx, mut event_rx) = mpsc::channel::<AgentEvent>(256);
@@ -267,9 +265,6 @@ mod tests {
 
     #[test]
     fn strip_mention_multiple() {
-        assert_eq!(
-            strip_mention("<@U123> hey <@U123>", "U123"),
-            "hey"
-        );
+        assert_eq!(strip_mention("<@U123> hey <@U123>", "U123"), "hey");
     }
 }

@@ -42,9 +42,8 @@ impl SessionStore {
     pub fn create_session(&self, model: &str) -> Result<SessionWriter, ClawError> {
         let session_id = ulid::Ulid::new().to_string().to_lowercase();
         let file_path = self.sessions_dir.join(format!("{session_id}.jsonl"));
-        let file = File::create(&file_path).map_err(|e| {
-            ClawError::Session(format!("Failed to create session file: {e}"))
-        })?;
+        let file = File::create(&file_path)
+            .map_err(|e| ClawError::Session(format!("Failed to create session file: {e}")))?;
         let mut writer = SessionWriter {
             writer: BufWriter::new(file),
             session_id: session_id.clone(),
@@ -64,9 +63,8 @@ impl SessionStore {
     pub fn list_sessions(&self) -> Result<Vec<SessionMetadata>, ClawError> {
         let mut sessions = Vec::new();
 
-        let entries = fs::read_dir(&self.sessions_dir).map_err(|e| {
-            ClawError::Session(format!("Failed to read sessions dir: {e}"))
-        })?;
+        let entries = fs::read_dir(&self.sessions_dir)
+            .map_err(|e| ClawError::Session(format!("Failed to read sessions dir: {e}")))?;
 
         for entry in entries {
             let entry = entry.map_err(|e| ClawError::Session(e.to_string()))?;

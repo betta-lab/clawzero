@@ -46,76 +46,76 @@ impl Tool for FileEditTool {
         input: serde_json::Value,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ToolOutput> + Send + '_>> {
         Box::pin(async move {
-        let path = match input["path"].as_str() {
-            Some(p) => p,
-            None => {
-                return ToolOutput {
-                    content: "Missing 'path' parameter".to_string(),
-                    is_error: true,
-                };
-            }
-        };
-
-        let old_text = match input["old_text"].as_str() {
-            Some(t) => t,
-            None => {
-                return ToolOutput {
-                    content: "Missing 'old_text' parameter".to_string(),
-                    is_error: true,
-                };
-            }
-        };
-
-        let new_text = match input["new_text"].as_str() {
-            Some(t) => t,
-            None => {
-                return ToolOutput {
-                    content: "Missing 'new_text' parameter".to_string(),
-                    is_error: true,
-                };
-            }
-        };
-
-        let contents = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(e) => {
-                return ToolOutput {
-                    content: format!("Failed to read '{path}': {e}"),
-                    is_error: true,
-                };
-            }
-        };
-
-        let count = contents.matches(old_text).count();
-
-        if count == 0 {
-            return ToolOutput {
-                content: format!("old_text not found in '{path}'"),
-                is_error: true,
+            let path = match input["path"].as_str() {
+                Some(p) => p,
+                None => {
+                    return ToolOutput {
+                        content: "Missing 'path' parameter".to_string(),
+                        is_error: true,
+                    };
+                }
             };
-        }
 
-        if count > 1 {
-            return ToolOutput {
-                content: format!(
-                    "old_text found {count} times in '{path}'. It must be unique. Provide more context."
-                ),
-                is_error: true,
+            let old_text = match input["old_text"].as_str() {
+                Some(t) => t,
+                None => {
+                    return ToolOutput {
+                        content: "Missing 'old_text' parameter".to_string(),
+                        is_error: true,
+                    };
+                }
             };
-        }
 
-        let new_contents = contents.replacen(old_text, new_text, 1);
+            let new_text = match input["new_text"].as_str() {
+                Some(t) => t,
+                None => {
+                    return ToolOutput {
+                        content: "Missing 'new_text' parameter".to_string(),
+                        is_error: true,
+                    };
+                }
+            };
 
-        match std::fs::write(path, &new_contents) {
-            Ok(()) => ToolOutput {
-                content: format!("Edited {path}"),
-                is_error: false,
-            },
-            Err(e) => ToolOutput {
-                content: format!("Failed to write '{path}': {e}"),
-                is_error: true,
-            },
-        }
+            let contents = match std::fs::read_to_string(path) {
+                Ok(c) => c,
+                Err(e) => {
+                    return ToolOutput {
+                        content: format!("Failed to read '{path}': {e}"),
+                        is_error: true,
+                    };
+                }
+            };
+
+            let count = contents.matches(old_text).count();
+
+            if count == 0 {
+                return ToolOutput {
+                    content: format!("old_text not found in '{path}'"),
+                    is_error: true,
+                };
+            }
+
+            if count > 1 {
+                return ToolOutput {
+                    content: format!(
+                        "old_text found {count} times in '{path}'. It must be unique. Provide more context."
+                    ),
+                    is_error: true,
+                };
+            }
+
+            let new_contents = contents.replacen(old_text, new_text, 1);
+
+            match std::fs::write(path, &new_contents) {
+                Ok(()) => ToolOutput {
+                    content: format!("Edited {path}"),
+                    is_error: false,
+                },
+                Err(e) => ToolOutput {
+                    content: format!("Failed to write '{path}': {e}"),
+                    is_error: true,
+                },
+            }
         })
     }
 }

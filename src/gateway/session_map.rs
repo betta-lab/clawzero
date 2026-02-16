@@ -48,9 +48,8 @@ impl SessionMap {
             if content.trim().is_empty() {
                 HashMap::new()
             } else {
-                serde_json::from_str(&content).map_err(|e| {
-                    ClawError::Gateway(format!("Failed to parse session map: {e}"))
-                })?
+                serde_json::from_str(&content)
+                    .map_err(|e| ClawError::Gateway(format!("Failed to parse session map: {e}")))?
             }
         } else {
             HashMap::new()
