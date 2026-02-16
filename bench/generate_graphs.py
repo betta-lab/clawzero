@@ -102,72 +102,75 @@ ax1 = plt.subplot(2, 2, 1)
 x = np.arange(1)
 for i, (value, color, tool) in enumerate(zip(data['startup']['time'], colors, tools)):
     bars = ax1.bar(i, value, color=color, alpha=0.85, edgecolor='white', linewidth=2, width=0.6)
-    # Add value + speedup annotation
-    speedup = data['startup']['time'][i] / data['startup']['time'][0]
-    label = f'{value:.3f}s' if i == 0 else f'{value:.2f}s\n({speedup:.0f}x)'
-    ax1.text(i, value, label, ha='center', va='bottom',
-            fontsize=9, fontweight='bold', color='#2c3e50')
+    # Add value label on top
+    ax1.text(i, value, f'{value:.3f}' if value < 1 else f'{value:.2f}',
+            ha='center', va='bottom', fontsize=9, fontweight='bold', color='#2c3e50')
+    # Add speedup inside bar (only for non-baseline tools)
+    if i > 0:
+        speedup = data['startup']['time'][i] / data['startup']['time'][0]
+        ax1.text(i, value/2, f'{speedup:.0f}×',
+                ha='center', va='center', fontsize=14, fontweight='bold', color='white')
 ax1.set_xticks(range(3))
 ax1.set_xticklabels(tools, fontsize=10, color='#2c3e50')
-ax1.set_ylim(0, max(data['startup']['time']) * 1.25)
+ax1.set_ylim(0, max(data['startup']['time']) * 1.2)
 format_subplot(ax1, 'Startup Time (--help)', 'Time (s)')
 
 # 2. E2E Time Comparison (top-right)
 ax2 = plt.subplot(2, 2, 2)
 bars = add_grouped_bars(ax2, [data['simple']['e2e'], data['tool_use']['e2e']])
-# Add speedup annotations
+# Add speedup inside bars
 for scenario_idx, scenario_name in enumerate(['simple', 'tool_use']):
     scenario_data = data[scenario_name]['e2e']
     for tool_idx in range(3):
-        speedup = scenario_data[tool_idx] / scenario_data[0]
         if tool_idx > 0:  # Skip clawzero (baseline)
+            speedup = scenario_data[tool_idx] / scenario_data[0]
             bar = bars[tool_idx][scenario_idx]
             height = bar.get_height()
-            ax2.text(bar.get_x() + bar.get_width()/2., height * 1.05,
-                    f'{speedup:.1f}x', ha='center', va='bottom',
-                    fontsize=7, style='italic', color='#e74c3c')
+            ax2.text(bar.get_x() + bar.get_width()/2., height/2,
+                    f'{speedup:.1f}×', ha='center', va='center',
+                    fontsize=11, fontweight='bold', color='white')
 ax2.set_xticks([0, 1])
 ax2.set_xticklabels(['simple', 'tool_use'], fontsize=10, color='#2c3e50')
-ax2.set_ylim(0, max(data['simple']['e2e'] + data['tool_use']['e2e']) * 1.25)
+ax2.set_ylim(0, max(data['simple']['e2e'] + data['tool_use']['e2e']) * 1.2)
 format_subplot(ax2, 'End-to-End Time', 'Time (s)')
 ax2.legend(loc='upper left', fontsize=9, frameon=True, fancybox=True, shadow=False)
 
 # 3. TTFT Comparison (bottom-left)
 ax3 = plt.subplot(2, 2, 3)
 bars = add_grouped_bars(ax3, [data['simple']['ttft'], data['tool_use']['ttft']])
-# Add speedup annotations
+# Add speedup inside bars
 for scenario_idx, scenario_name in enumerate(['simple', 'tool_use']):
     scenario_data = data[scenario_name]['ttft']
     for tool_idx in range(3):
-        speedup = scenario_data[tool_idx] / scenario_data[0]
         if tool_idx > 0:  # Skip clawzero (baseline)
+            speedup = scenario_data[tool_idx] / scenario_data[0]
             bar = bars[tool_idx][scenario_idx]
             height = bar.get_height()
-            ax3.text(bar.get_x() + bar.get_width()/2., height * 1.05,
-                    f'{speedup:.1f}x', ha='center', va='bottom',
-                    fontsize=7, style='italic', color='#e74c3c')
+            ax3.text(bar.get_x() + bar.get_width()/2., height/2,
+                    f'{speedup:.1f}×', ha='center', va='center',
+                    fontsize=11, fontweight='bold', color='white')
 ax3.set_xticks([0, 1])
 ax3.set_xticklabels(['simple', 'tool_use'], fontsize=10, color='#2c3e50')
-ax3.set_ylim(0, max(data['simple']['ttft'] + data['tool_use']['ttft']) * 1.25)
+ax3.set_ylim(0, max(data['simple']['ttft'] + data['tool_use']['ttft']) * 1.2)
 format_subplot(ax3, 'Time to First Token (TTFT)', 'Time (s)')
 
 # 4. Memory by Scenario (bottom-right)
 ax4 = plt.subplot(2, 2, 4)
 bars = add_grouped_bars(ax4, [data['startup']['memory'], data['simple']['memory'], data['tool_use']['memory']])
-# Add memory ratio annotations
+# Add memory ratio inside bars
 for scenario_idx, scenario_name in enumerate(['startup', 'simple', 'tool_use']):
     scenario_data = data[scenario_name]['memory']
     for tool_idx in range(3):
-        ratio = scenario_data[tool_idx] / scenario_data[0]
         if tool_idx > 0:  # Skip clawzero (baseline)
+            ratio = scenario_data[tool_idx] / scenario_data[0]
             bar = bars[tool_idx][scenario_idx]
             height = bar.get_height()
-            ax4.text(bar.get_x() + bar.get_width()/2., height * 1.05,
-                    f'{ratio:.0f}x', ha='center', va='bottom',
-                    fontsize=7, style='italic', color='#e74c3c')
+            ax4.text(bar.get_x() + bar.get_width()/2., height/2,
+                    f'{ratio:.0f}×', ha='center', va='center',
+                    fontsize=11, fontweight='bold', color='white')
 ax4.set_xticks([0, 1, 2])
 ax4.set_xticklabels(['startup', 'simple', 'tool_use'], fontsize=10, color='#2c3e50')
-ax4.set_ylim(0, max(data['startup']['memory'] + data['simple']['memory'] + data['tool_use']['memory']) * 1.25)
+ax4.set_ylim(0, max(data['startup']['memory'] + data['simple']['memory'] + data['tool_use']['memory']) * 1.2)
 format_subplot(ax4, 'Peak Memory Usage', 'Memory (MB)')
 
 # Overall title
