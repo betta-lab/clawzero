@@ -10,6 +10,12 @@ pub struct MemoryStore {
     project_path: Option<PathBuf>,
 }
 
+impl Default for MemoryStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MemoryStore {
     pub fn new() -> Self {
         let global_path = dirs::config_dir()
@@ -37,21 +43,20 @@ impl MemoryStore {
     pub fn read_all(&self) -> String {
         let mut content = String::new();
 
-        if let Ok(global) = std::fs::read_to_string(&self.global_path) {
-            if !global.trim().is_empty() {
-                content.push_str("# Global Memory\n\n");
-                content.push_str(&global);
-                content.push_str("\n\n");
-            }
+        if let Ok(global) = std::fs::read_to_string(&self.global_path)
+            && !global.trim().is_empty()
+        {
+            content.push_str("# Global Memory\n\n");
+            content.push_str(&global);
+            content.push_str("\n\n");
         }
 
-        if let Some(ref project_path) = self.project_path {
-            if let Ok(project) = std::fs::read_to_string(project_path) {
-                if !project.trim().is_empty() {
-                    content.push_str("# Project Memory\n\n");
-                    content.push_str(&project);
-                }
-            }
+        if let Some(ref project_path) = self.project_path
+            && let Ok(project) = std::fs::read_to_string(project_path)
+            && !project.trim().is_empty()
+        {
+            content.push_str("# Project Memory\n\n");
+            content.push_str(&project);
         }
 
         content

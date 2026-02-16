@@ -8,7 +8,7 @@ use crate::tool::traits::{Tool, ToolOutput};
 pub struct FileReadTool;
 
 impl FileReadTool {
-    pub fn new() -> Arc<dyn Tool> {
+    pub fn create() -> Arc<dyn Tool> {
         Arc::new(Self)
     }
 }

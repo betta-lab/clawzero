@@ -10,7 +10,7 @@ use crate::tool::traits::{Tool, ToolOutput};
 pub struct ShellTool;
 
 impl ShellTool {
-    pub fn new() -> Arc<dyn Tool> {
+    pub fn create() -> Arc<dyn Tool> {
         Arc::new(Self)
     }
 }

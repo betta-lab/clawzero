@@ -10,8 +10,8 @@ pub fn load_plugin_tools(configs: &[PluginToolConfig]) -> Vec<Arc<dyn Tool>> {
     configs
         .iter()
         .map(|config| match config.tool_type {
-            PluginType::Bash => BashPluginTool::new(config.clone()),
-            PluginType::Http => HttpPluginTool::new(config.clone()),
+            PluginType::Bash => BashPluginTool::create(config.clone()),
+            PluginType::Http => HttpPluginTool::create(config.clone()),
         })
         .collect()
 }

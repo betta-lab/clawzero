@@ -64,11 +64,7 @@ impl ConversationContext {
         let original_count = self.messages.len();
         self.messages = compact_messages(&self.messages, target, 2);
         let new_count = self.messages.len();
-        if new_count < original_count {
-            original_count - new_count
-        } else {
-            0
-        }
+        original_count.saturating_sub(new_count)
     }
 
     pub fn build_request(&self, model: &str, tools: &[ToolDefinition]) -> CompletionRequest {

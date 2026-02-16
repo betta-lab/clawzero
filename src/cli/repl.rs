@@ -86,6 +86,7 @@ pub async fn run_repl(
 }
 
 /// Resume an existing session in REPL mode.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_repl_resume(
     provider: Arc<dyn Provider>,
     model: String,

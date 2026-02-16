@@ -147,6 +147,7 @@ pub async fn run_slack_gateway(
 }
 
 /// Handle messages for a single Slack thread.
+#[allow(clippy::too_many_arguments)]
 async fn run_slack_thread(
     factory: Arc<AgentFactory>,
     session_store: Arc<SessionStore>,
@@ -202,12 +203,12 @@ async fn run_slack_thread(
         let update_handle = tokio::spawn(async move {
             let mut handler = BotEventHandler::new(Duration::from_millis(500));
             while let Some(event) = event_rx.recv().await {
-                if let Some(text) = handler.handle_event(&event) {
-                    if !text.is_empty() {
-                        let _ = api_clone
-                            .update_message(&channel_clone, &msg_ts_clone, &text)
-                            .await;
-                    }
+                if let Some(text) = handler.handle_event(&event)
+                    && !text.is_empty()
+                {
+                    let _ = api_clone
+                        .update_message(&channel_clone, &msg_ts_clone, &text)
+                        .await;
                 }
             }
             // Final update

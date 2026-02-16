@@ -8,7 +8,7 @@ use crate::tool::traits::{Tool, ToolOutput};
 pub struct FileWriteTool;
 
 impl FileWriteTool {
-    pub fn new() -> Arc<dyn Tool> {
+    pub fn create() -> Arc<dyn Tool> {
         Arc::new(Self)
     }
 }
@@ -63,18 +63,14 @@ impl Tool for FileWriteTool {
             };
 
             // Create parent directories if needed
-            if let Some(parent) = std::path::Path::new(path).parent() {
-                if !parent.exists() {
-                    if let Err(e) = std::fs::create_dir_all(parent) {
-                        return ToolOutput {
-                            content: format!(
-                                "Failed to create directory '{}': {e}",
-                                parent.display()
-                            ),
-                            is_error: true,
-                        };
-                    }
-                }
+            if let Some(parent) = std::path::Path::new(path).parent()
+                && !parent.exists()
+                && let Err(e) = std::fs::create_dir_all(parent)
+            {
+                return ToolOutput {
+                    content: format!("Failed to create directory '{}': {e}", parent.display()),
+                    is_error: true,
+                };
             }
 
             match std::fs::write(path, content) {

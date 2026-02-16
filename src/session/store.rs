@@ -69,10 +69,10 @@ impl SessionStore {
         for entry in entries {
             let entry = entry.map_err(|e| ClawError::Session(e.to_string()))?;
             let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "jsonl") {
-                if let Some(meta) = self.read_session_metadata(&path) {
-                    sessions.push(meta);
-                }
+            if path.extension().is_some_and(|ext| ext == "jsonl")
+                && let Some(meta) = self.read_session_metadata(&path)
+            {
+                sessions.push(meta);
             }
         }
 

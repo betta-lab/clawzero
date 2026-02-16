@@ -47,10 +47,10 @@ impl VertexAuth {
         // Check cache first
         {
             let cache = self.token_cache.lock().unwrap();
-            if let Some(ref cached) = *cache {
-                if cached.expires_at > Instant::now() + Duration::from_secs(60) {
-                    return Ok(cached.access_token.clone());
-                }
+            if let Some(ref cached) = *cache
+                && cached.expires_at > Instant::now() + Duration::from_secs(60)
+            {
+                return Ok(cached.access_token.clone());
             }
         }
 

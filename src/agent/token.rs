@@ -2,7 +2,7 @@ use crate::model::message::{ContentBlock, Message};
 
 /// Approximate token count for a string using chars/4 heuristic.
 pub fn estimate_tokens(text: &str) -> u32 {
-    ((text.len() as u32) + 3) / 4
+    (text.len() as u32).div_ceil(4)
 }
 
 /// Estimate tokens for a single Message (sum of all content blocks).
@@ -24,7 +24,7 @@ pub fn estimate_message_tokens(msg: &Message) -> u32 {
 /// Estimate total tokens for a conversation context.
 pub fn estimate_context_tokens(system_prompt: &str, messages: &[Message]) -> u32 {
     let system_tokens = estimate_tokens(system_prompt);
-    let message_tokens: u32 = messages.iter().map(|m| estimate_message_tokens(m)).sum();
+    let message_tokens: u32 = messages.iter().map(estimate_message_tokens).sum();
     system_tokens + message_tokens
 }
 

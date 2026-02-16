@@ -14,12 +14,12 @@ use crate::tool::traits::{Tool, ToolRegistry};
 pub fn builtin_tools(memory_store: Arc<MemoryStore>) -> ToolRegistry {
     let mut registry = ToolRegistry::new();
     let tools: Vec<Arc<dyn Tool>> = vec![
-        shell::ShellTool::new(),
-        file_read::FileReadTool::new(),
-        file_write::FileWriteTool::new(),
-        file_edit::FileEditTool::new(),
-        memory_read::MemoryReadTool::new(Arc::clone(&memory_store)),
-        memory_write::MemoryWriteTool::new(memory_store),
+        shell::ShellTool::create(),
+        file_read::FileReadTool::create(),
+        file_write::FileWriteTool::create(),
+        file_edit::FileEditTool::create(),
+        memory_read::MemoryReadTool::create(Arc::clone(&memory_store)),
+        memory_write::MemoryWriteTool::create(memory_store),
     ];
     for tool in tools {
         registry.register(tool);

@@ -247,28 +247,28 @@ fn parse_openai_chunk(data: &str) -> Option<Result<StreamEvent, ClawError>> {
     };
 
     // Check for usage-only chunk (final chunk with stream_options.include_usage)
-    if let Some(usage) = parsed.get("usage") {
-        if !usage.is_null() {
-            // Determine stop reason from choices if present
-            let stop_reason = parsed["choices"]
-                .get(0)
-                .and_then(|c| c["finish_reason"].as_str())
-                .map(|r| match r {
-                    "stop" => StopReason::EndTurn,
-                    "tool_calls" => StopReason::ToolUse,
-                    "length" => StopReason::MaxTokens,
-                    _ => StopReason::EndTurn,
-                })
-                .unwrap_or(StopReason::EndTurn);
+    if let Some(usage) = parsed.get("usage")
+        && !usage.is_null()
+    {
+        // Determine stop reason from choices if present
+        let stop_reason = parsed["choices"]
+            .get(0)
+            .and_then(|c| c["finish_reason"].as_str())
+            .map(|r| match r {
+                "stop" => StopReason::EndTurn,
+                "tool_calls" => StopReason::ToolUse,
+                "length" => StopReason::MaxTokens,
+                _ => StopReason::EndTurn,
+            })
+            .unwrap_or(StopReason::EndTurn);
 
-            return Some(Ok(StreamEvent::MessageEnd {
-                stop_reason,
-                usage: Usage {
-                    input_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
-                    output_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
-                },
-            }));
-        }
+        return Some(Ok(StreamEvent::MessageEnd {
+            stop_reason,
+            usage: Usage {
+                input_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
+                output_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
+            },
+        }));
     }
 
     let choice = parsed["choices"].get(0)?;
@@ -292,44 +292,45 @@ fn parse_openai_chunk(data: &str) -> Option<Result<StreamEvent, ClawError>> {
     }
 
     // Text content delta
-    if let Some(content) = delta["content"].as_str() {
-        if !content.is_empty() {
-            return Some(Ok(StreamEvent::TextDelta {
-                text: content.to_string(),
-            }));
-        }
+    if let Some(content) = delta["content"].as_str()
+        && !content.is_empty()
+    {
+        return Some(Ok(StreamEvent::TextDelta {
+            text: content.to_string(),
+        }));
     }
 
     // Tool calls
-    if let Some(tool_calls) = delta.get("tool_calls") {
-        if let Some(tc) = tool_calls.get(0) {
-            // Tool call with id = new tool call start
-            if let Some(id) = tc["id"].as_str() {
-                let name = tc["function"]["name"].as_str().unwrap_or("").to_string();
-                return Some(Ok(StreamEvent::ToolUseStart {
-                    id: id.to_string(),
-                    name,
-                }));
-            }
-            // Tool call with arguments delta
-            if let Some(args) = tc["function"]["arguments"].as_str() {
-                if !args.is_empty() {
-                    return Some(Ok(StreamEvent::ToolInputDelta {
-                        partial_json: args.to_string(),
-                    }));
-                }
-            }
+    if let Some(tool_calls) = delta.get("tool_calls")
+        && let Some(tc) = tool_calls.get(0)
+    {
+        // Tool call with id = new tool call start
+        if let Some(id) = tc["id"].as_str() {
+            let name = tc["function"]["name"].as_str().unwrap_or("").to_string();
+            return Some(Ok(StreamEvent::ToolUseStart {
+                id: id.to_string(),
+                name,
+            }));
+        }
+        // Tool call with arguments delta
+        if let Some(args) = tc["function"]["arguments"].as_str()
+            && !args.is_empty()
+        {
+            return Some(Ok(StreamEvent::ToolInputDelta {
+                partial_json: args.to_string(),
+            }));
         }
     }
 
     // First chunk often has model info
-    if let Some(model) = parsed["model"].as_str() {
-        if delta.is_object() && delta.as_object().is_some_and(|o| o.is_empty()) {
-            return Some(Ok(StreamEvent::MessageStart {
-                id: parsed["id"].as_str().unwrap_or("").to_string(),
-                model: model.to_string(),
-            }));
-        }
+    if let Some(model) = parsed["model"].as_str()
+        && delta.is_object()
+        && delta.as_object().is_some_and(|o| o.is_empty())
+    {
+        return Some(Ok(StreamEvent::MessageStart {
+            id: parsed["id"].as_str().unwrap_or("").to_string(),
+            model: model.to_string(),
+        }));
     }
 
     None

@@ -16,7 +16,7 @@ pub fn compact_messages(
         return Vec::new();
     }
 
-    let total: u32 = messages.iter().map(|m| estimate_message_tokens(m)).sum();
+    let total: u32 = messages.iter().map(estimate_message_tokens).sum();
     if total <= target_tokens {
         return messages.to_vec();
     }

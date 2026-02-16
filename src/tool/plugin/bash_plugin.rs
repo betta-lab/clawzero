@@ -10,7 +10,7 @@ pub struct BashPluginTool {
 }
 
 impl BashPluginTool {
-    pub fn new(config: PluginToolConfig) -> Arc<dyn Tool> {
+    pub fn create(config: PluginToolConfig) -> Arc<dyn Tool> {
         Arc::new(Self { config })
     }
 }
@@ -113,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_bash_plugin_simple() {
-        let tool = BashPluginTool::new(make_config("echo {{message}}"));
+        let tool = BashPluginTool::create(make_config("echo {{message}}"));
         let output = tool
             .execute(serde_json::json!({"message": "hello_plugin"}))
             .await;
@@ -123,7 +123,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_bash_plugin_no_params() {
-        let tool = BashPluginTool::new(make_config("echo static_output"));
+        let tool = BashPluginTool::create(make_config("echo static_output"));
         let output = tool.execute(serde_json::json!({})).await;
         assert!(!output.is_error);
         assert!(output.content.contains("static_output"));

@@ -11,7 +11,7 @@ pub struct MemoryReadTool {
 }
 
 impl MemoryReadTool {
-    pub fn new(store: Arc<MemoryStore>) -> Arc<dyn Tool> {
+    pub fn create(store: Arc<MemoryStore>) -> Arc<dyn Tool> {
         Arc::new(Self { store })
     }
 }
@@ -57,7 +57,7 @@ mod tests {
     fn test_memory_read_tool_definition() {
         let dir = tempfile::tempdir().unwrap();
         let store = Arc::new(MemoryStore::with_paths(dir.path().join("MEMORY.md"), None));
-        let tool = MemoryReadTool::new(store);
+        let tool = MemoryReadTool::create(store);
         let def = tool.definition();
         assert_eq!(def.name, "memory_read");
     }

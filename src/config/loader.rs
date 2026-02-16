@@ -8,16 +8,16 @@ pub fn load_config() -> Result<AppConfig, ClawError> {
     let mut config = builtin_defaults();
 
     // Load global config: ~/.config/clawzero/config.toml
-    if let Some(global_path) = global_config_path() {
-        if global_path.exists() {
-            let content = std::fs::read_to_string(&global_path).map_err(|e| {
-                ClawError::Config(format!("Failed to read {}: {e}", global_path.display()))
-            })?;
-            let file_config: AppConfig = toml::from_str(&content).map_err(|e| {
-                ClawError::Config(format!("Failed to parse {}: {e}", global_path.display()))
-            })?;
-            merge_config(&mut config, file_config);
-        }
+    if let Some(global_path) = global_config_path()
+        && global_path.exists()
+    {
+        let content = std::fs::read_to_string(&global_path).map_err(|e| {
+            ClawError::Config(format!("Failed to read {}: {e}", global_path.display()))
+        })?;
+        let file_config: AppConfig = toml::from_str(&content).map_err(|e| {
+            ClawError::Config(format!("Failed to parse {}: {e}", global_path.display()))
+        })?;
+        merge_config(&mut config, file_config);
     }
 
     // Load project-local config: ./clawzero.toml
@@ -106,16 +106,16 @@ fn merge_config(base: &mut AppConfig, overlay: AppConfig) {
 /// Resolve the API key for a provider config.
 /// Tries `api_key` first, then reads from env var specified by `api_key_env`.
 pub fn resolve_api_key(config: &ProviderConfig) -> Result<String, ClawError> {
-    if let Some(key) = &config.api_key {
-        if !key.is_empty() {
-            return Ok(key.clone());
-        }
+    if let Some(key) = &config.api_key
+        && !key.is_empty()
+    {
+        return Ok(key.clone());
     }
     if let Some(env_var) = &config.api_key_env {
-        if let Ok(key) = std::env::var(env_var) {
-            if !key.is_empty() {
-                return Ok(key);
-            }
+        if let Ok(key) = std::env::var(env_var)
+            && !key.is_empty()
+        {
+            return Ok(key);
         }
         return Err(ClawError::Config(format!(
             "API key not found: set {env_var} environment variable"

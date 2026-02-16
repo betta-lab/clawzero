@@ -11,7 +11,7 @@ pub struct HttpPluginTool {
 }
 
 impl HttpPluginTool {
-    pub fn new(config: PluginToolConfig) -> Arc<dyn Tool> {
+    pub fn create(config: PluginToolConfig) -> Arc<dyn Tool> {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_millis(config.timeout_ms.unwrap_or(30_000)))
             .build()
@@ -131,7 +131,7 @@ mod tests {
             })),
             timeout_ms: None,
         };
-        let tool = HttpPluginTool::new(config);
+        let tool = HttpPluginTool::create(config);
         let def = tool.definition();
         assert_eq!(def.name, "test_api");
     }

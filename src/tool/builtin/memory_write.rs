@@ -11,7 +11,7 @@ pub struct MemoryWriteTool {
 }
 
 impl MemoryWriteTool {
-    pub fn new(store: Arc<MemoryStore>) -> Arc<dyn Tool> {
+    pub fn create(store: Arc<MemoryStore>) -> Arc<dyn Tool> {
         Arc::new(Self { store })
     }
 }
@@ -98,7 +98,7 @@ mod tests {
     fn test_memory_write_tool_definition() {
         let dir = tempfile::tempdir().unwrap();
         let store = Arc::new(MemoryStore::with_paths(dir.path().join("MEMORY.md"), None));
-        let tool = MemoryWriteTool::new(store);
+        let tool = MemoryWriteTool::create(store);
         let def = tool.definition();
         assert_eq!(def.name, "memory_write");
         assert!(
@@ -116,7 +116,7 @@ mod tests {
             dir.path().join("MEMORY.md"),
             Some(dir.path().join("project_MEMORY.md")),
         ));
-        let tool = MemoryWriteTool::new(Arc::clone(&store));
+        let tool = MemoryWriteTool::create(Arc::clone(&store));
         let output = tool
             .execute(json!({
                 "scope": "global",

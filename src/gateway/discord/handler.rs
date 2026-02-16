@@ -17,11 +17,13 @@ use crate::gateway::event_handler::BotEventHandler;
 use crate::gateway::session_map::{SessionMap, ThreadKey};
 use crate::session::store::SessionStore;
 
+type ThreadSender = mpsc::Sender<(String, DiscordMessage)>;
+
 struct DiscordHandler {
     factory: Arc<AgentFactory>,
     session_store: Arc<SessionStore>,
     session_map: Arc<SessionMap>,
-    threads: Arc<Mutex<HashMap<String, mpsc::Sender<(String, DiscordMessage)>>>>,
+    threads: Arc<Mutex<HashMap<String, ThreadSender>>>,
     bot_user_id: Arc<RwLock<Option<UserId>>>,
 }
 
@@ -155,22 +157,22 @@ async fn run_discord_thread(
         let update_handle = tokio::spawn(async move {
             let mut handler = BotEventHandler::new(Duration::from_millis(500));
             while let Some(event) = event_rx.recv().await {
-                if let Some(text) = handler.handle_event(&event) {
-                    if !text.is_empty() {
-                        // Discord max message length is 2000 chars
-                        let truncated = if text.len() > 1990 {
-                            format!("{}...", &text[..1990])
-                        } else {
-                            text
-                        };
-                        let _ = channel_id
-                            .edit_message(
-                                &http_clone,
-                                placeholder_id,
-                                EditMessage::new().content(&truncated),
-                            )
-                            .await;
-                    }
+                if let Some(text) = handler.handle_event(&event)
+                    && !text.is_empty()
+                {
+                    // Discord max message length is 2000 chars
+                    let truncated = if text.len() > 1990 {
+                        format!("{}...", &text[..1990])
+                    } else {
+                        text
+                    };
+                    let _ = channel_id
+                        .edit_message(
+                            &http_clone,
+                            placeholder_id,
+                            EditMessage::new().content(&truncated),
+                        )
+                        .await;
                 }
             }
             let final_text = handler.finalize();
