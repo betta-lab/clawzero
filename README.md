@@ -20,6 +20,103 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 - **Plugin tools** — Custom bash/HTTP tools via TOML config
 - **Gateway** — Slack / Discord / Web UI bot via `clawzero gateway`
 
+## Benchmark
+
+Performance comparison vs Claude Code and OpenClaw (all using **Sonnet 4.5** model):
+
+### Startup Time (`--help`, no API calls)
+
+```mermaid
+---
+config:
+    xyChart:
+        width: 700
+        height: 350
+    themeVariables:
+        xyChart:
+            backgroundColor: transparent
+---
+xychart-beta
+    title "Startup Time (ms) — lower is better"
+    x-axis ["clawzero", "Claude Code", "OpenClaw"]
+    y-axis "Time (ms)" 0 --> 1500
+    bar [2.16, 838, 1425]
+```
+
+### E2E Response Time ("What is 1+1?")
+
+```mermaid
+---
+config:
+    xyChart:
+        width: 700
+        height: 350
+    themeVariables:
+        xyChart:
+            backgroundColor: transparent
+---
+xychart-beta
+    title "E2E Time (ms) — lower is better"
+    x-axis ["clawzero", "Claude Code", "OpenClaw"]
+    y-axis "Time (ms)" 0 --> 20000
+    bar [2100, 4674, 18718]
+```
+
+### Time to First Token (TTFT)
+
+```mermaid
+---
+config:
+    xyChart:
+        width: 700
+        height: 350
+    themeVariables:
+        xyChart:
+            backgroundColor: transparent
+---
+xychart-beta
+    title "TTFT (ms) — lower is better"
+    x-axis ["clawzero", "Claude Code", "OpenClaw"]
+    y-axis "Time (ms)" 0 --> 10000
+    bar [1689, 3232, 9611]
+```
+
+### Memory Usage (simple scenario)
+
+```mermaid
+---
+config:
+    xyChart:
+        width: 700
+        height: 350
+    themeVariables:
+        xyChart:
+            backgroundColor: transparent
+---
+xychart-beta
+    title "Peak Memory (MB) — lower is better"
+    x-axis ["clawzero", "Claude Code", "OpenClaw"]
+    y-axis "Memory (MB)" 0 --> 400
+    bar [10.1, 242, 398]
+```
+
+### Summary Table
+
+| Scenario | Metric | clawzero | Claude Code | OpenClaw |
+|---|---|---:|---:|---:|
+| **startup** | E2E Time | **2.16 ms** | 838 ms (388x) | 1,425 ms (659x) |
+| | Memory | **5.5 MB** | 217 MB (39x) | 256 MB (47x) |
+| **simple** | E2E Time | **2,100 ms** | 4,674 ms (2.2x) | 18,718 ms (8.9x) |
+| | TTFT | **1,689 ms** | 3,232 ms (1.9x) | 9,611 ms (5.7x) |
+| | Memory | **10.1 MB** | 242 MB (24x) | 398 MB (39x) |
+| **tool_use** | E2E Time | **4,423 ms** | 16,435 ms (3.7x) | 10,482 ms (2.4x) |
+| | TTFT | **1,162 ms** | 12,529 ms (10.8x) | 8,774 ms (7.6x) |
+| | Memory | **10.2 MB** | 245 MB (24x) | 399 MB (39x) |
+
+> **Environment**: Docker (Ubuntu 24.04), all tools using `anthropic/claude-sonnet-4-5-20250929`
+> **Tools**: `hyperfine` (E2E time), `/usr/bin/time -v` (memory), custom wrapper (TTFT)
+> **Reproduce**: `docker compose -f bench/docker-compose.yml run bench`
+
 ## Quick Start
 
 ```bash

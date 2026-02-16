@@ -1,0 +1,12 @@
+services:
+  bench:
+    build:
+      context: ..
+      dockerfile: bench/Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY
+      - OPENAI_API_KEY
+      - BENCH_ITERATIONS=${BENCH_ITERATIONS:-5}
+      - BENCH_MODEL=${BENCH_MODEL:-anthropic/claude-sonnet-4-5-20250929}
+    volumes:
+      - ./results:/bench/results
