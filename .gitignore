@@ -224,6 +224,9 @@ target/
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,rust,node,react
 
 
+# mdBook build output
+docs/book/
+
 # Added by cargo
 
 /target

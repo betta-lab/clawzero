@@ -1,0 +1,10 @@
+[book]
+title = "clawzero"
+description = "Ultra-fast, stable AI agent CLI built in Rust"
+authors = ["betta-lab"]
+language = "en"
+src = "src"
+
+[output.html]
+git-repository-url = "https://github.com/betta-lab/clawzero"
+edit-url-template = "https://github.com/betta-lab/clawzero/edit/main/docs/src/{path}"
