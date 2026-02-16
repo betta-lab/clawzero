@@ -1,93 +1,93 @@
 # Benchmarking
 
-clawzero には Claude Code・OpenClaw との性能比較を Docker 上で再現可能に実行するベンチマーク環境が含まれています。
+clawzero includes a reproducible Docker-based benchmark environment for performance comparison against Claude Code and OpenClaw.
 
-## クイックスタート
+## Quick Start
 
 ```bash
-# 全ツール・全シナリオを実行
+# Run all tools × all scenarios
 docker compose -f bench/docker-compose.yml run bench
 
-# clawzero の起動時間のみ計測
+# Measure clawzero startup time only
 docker compose -f bench/docker-compose.yml run bench --tools clawzero --scenarios startup
 
-# イテレーション数を指定
+# Specify iteration count
 docker compose -f bench/docker-compose.yml run bench --iterations 10
 ```
 
-## 前提条件
+## Prerequisites
 
 - Docker / Docker Compose
-- `ANTHROPIC_API_KEY` 環境変数（API を使うシナリオに必要）
-- `OPENAI_API_KEY` 環境変数（OpenClaw 用、任意）
+- `ANTHROPIC_API_KEY` environment variable (required for API scenarios)
+- `OPENAI_API_KEY` environment variable (optional, for OpenClaw)
 
-## 計測メトリクス
+## Metrics
 
-| メトリクス | 計測方法 |
+| Metric | Measurement Method |
 |---|---|
-| 起動時間 (cold start) | `hyperfine` で `--help` 実行の壁時計時間 |
-| TTFT (Time to First Token) | カスタムラッパーで stdout の最初の 1 バイト到着までの時間 |
-| E2E 完了時間 | `hyperfine` でプロンプト実行の壁時計時間 |
-| メモリ使用量 (peak RSS) | `/usr/bin/time -v` の Maximum resident set size |
-| トークンスループット | 出力文字数 / E2E 時間 |
+| Startup time (cold start) | Wall-clock time of `--help` execution via `hyperfine` |
+| TTFT (Time to First Token) | Time until first stdout byte via custom wrapper |
+| E2E completion time | Wall-clock time of prompt execution via `hyperfine` |
+| Memory usage (peak RSS) | Maximum resident set size via `/usr/bin/time -v` |
+| Token throughput | Output characters / E2E time |
 
-## シナリオ
+## Scenarios
 
-| シナリオ | 内容 | API コール |
+| Scenario | Description | API Call |
 |---|---|---|
-| `startup` | `--help` の実行時間 | なし |
-| `simple` | `"What is 1+1?"` への応答 | あり |
-| `tool_use` | ファイル読み取り＋行数カウント | あり |
+| `startup` | `--help` execution time | No |
+| `simple` | Response to `"What is 1+1?"` | Yes |
+| `tool_use` | File read + line count | Yes |
 
-## ファイル構成
+## File Structure
 
 ```
 bench/
-├── Dockerfile              # マルチステージビルド
-├── docker-compose.yml      # 環境変数とボリュームマウント
-├── run.sh                  # メインベンチマークランナー
+├── Dockerfile              # Multi-stage build
+├── docker-compose.yml      # Environment variables and volume mounts
+├── run.sh                  # Main benchmark runner
 ├── adapters/
-│   ├── clawzero.sh         # clawzero 呼び出しアダプタ
-│   ├── claude-code.sh      # Claude Code 呼び出しアダプタ
-│   └── openclaw.sh         # OpenClaw 呼び出しアダプタ
-├── measure_ttft.sh         # TTFT 計測ヘルパー
+│   ├── clawzero.sh         # clawzero invocation adapter
+│   ├── claude-code.sh      # Claude Code invocation adapter
+│   └── openclaw.sh         # OpenClaw invocation adapter
+├── measure_ttft.sh         # TTFT measurement helper
 ├── fixtures/
-│   └── bench_input.txt     # tool_use シナリオ用テストファイル
-└── results/                # 結果出力 (.gitignore)
+│   └── bench_input.txt     # Test file for tool_use scenario
+└── results/                # Output directory (.gitignore)
 ```
 
-## run.sh のオプション
+## run.sh Options
 
 ```
---tools <t1,t2,...>       計測対象ツール (default: clawzero,claude-code,openclaw)
---scenarios <s1,s2,...>   実行シナリオ (default: startup,simple,tool_use)
---iterations <N>          反復回数 (default: $BENCH_ITERATIONS or 5)
---results-dir <path>      結果出力先 (default: bench/results)
+--tools <t1,t2,...>       Tools to benchmark (default: clawzero,claude-code,openclaw)
+--scenarios <s1,s2,...>   Scenarios to run (default: startup,simple,tool_use)
+--iterations <N>          Iteration count (default: $BENCH_ITERATIONS or 5)
+--results-dir <path>      Output directory (default: bench/results)
 ```
 
-## 環境変数
+## Environment Variables
 
-| 変数名 | 説明 | デフォルト |
+| Variable | Description | Default |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Anthropic API キー | (必須) |
-| `OPENAI_API_KEY` | OpenAI API キー | (任意) |
-| `BENCH_ITERATIONS` | 反復回数 | `5` |
-| `BENCH_MODEL` | clawzero で使用するモデル | `anthropic/claude-sonnet-4-5-20250929` |
+| `ANTHROPIC_API_KEY` | Anthropic API key | (required) |
+| `OPENAI_API_KEY` | OpenAI API key | (optional) |
+| `BENCH_ITERATIONS` | Iteration count | `5` |
+| `BENCH_MODEL` | Model used by clawzero | `anthropic/claude-sonnet-4-5-20250929` |
 
-## 結果
+## Results
 
-結果は `bench/results/<timestamp>/` に保存されます:
+Results are saved to `bench/results/<timestamp>/`:
 
-- `results.json` — 全メトリクスの JSON
-- `<tool>_<scenario>_hyperfine.json` — hyperfine の raw データ
-- `<tool>_<scenario>_time.txt` — `/usr/bin/time` の出力
-- `<tool>_<scenario>_ttft.csv` — TTFT の CSV データ
+- `results.json` — All metrics in JSON format
+- `<tool>_<scenario>_hyperfine.json` — hyperfine raw data
+- `<tool>_<scenario>_time.txt` — `/usr/bin/time` output
+- `<tool>_<scenario>_ttft.csv` — TTFT CSV data
 
-実行終了時にサマリーテーブルがコンソールに出力されます。
+A summary table is printed to the console when execution completes.
 
-## アダプタの追加
+## Adding New Adapters
 
-新しいツールを追加するには `bench/adapters/<name>.sh` を作成し、以下の関数を定義します:
+To add a new tool, create `bench/adapters/<name>.sh` and define the following functions:
 
 ```bash
 TOOL_NAME="my-tool"
@@ -105,4 +105,4 @@ cmd_tool_use() {
 }
 ```
 
-`--tools my-tool` で指定すると自動的に読み込まれます。
+Specify `--tools my-tool` to automatically load the adapter.
