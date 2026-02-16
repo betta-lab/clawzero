@@ -12,7 +12,7 @@ Ultra-fast, stable AI agent CLI built in Rust. Inspired by [OpenClaw](https://gi
 
 - **Inline TUI** — Claude Code-style inline terminal UI
 - **Streaming-first** — Real-time SSE streaming responses
-- **Multi-provider** — Anthropic / OpenAI / OpenRouter / Ollama / Vertex AI / Bedrock
+- **Multi-provider** — Anthropic (API key & setup-token) / OpenAI / OpenRouter / Ollama / Vertex AI / Bedrock
 - **Agent loop** — Think → ToolCall → Observe autonomous execution
 - **Built-in tools** — bash, file read/write/edit, memory read/write
 - **Session persistence** — JSONL-based conversation history with resume

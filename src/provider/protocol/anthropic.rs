@@ -139,10 +139,22 @@ impl Provider for AnthropicProtocol {
             let mut req = self
                 .client
                 .post(&url)
-                .header("x-api-key", &self.api_key)
                 .header("anthropic-version", "2023-06-01")
-                .header("content-type", "application/json")
-                .json(&body);
+                .header("content-type", "application/json");
+
+            match detect_auth_method(&self.api_key) {
+                AuthMethod::Bearer => {
+                    req = req
+                        .bearer_auth(&self.api_key)
+                        .header("anthropic-beta", "oauth-2025-04-20");
+                }
+                AuthMethod::ApiKey => {
+                    req = req.header("x-api-key", &self.api_key);
+                }
+                AuthMethod::None => {}
+            }
+
+            req = req.json(&body);
 
             for (key, value) in &self.extra_headers {
                 req = req.header(key.as_str(), value.as_str());
@@ -184,6 +196,27 @@ impl Provider for AnthropicProtocol {
 
             Ok(Box::pin(mapped) as EventStream)
         })
+    }
+}
+
+/// Determines the authentication method based on the API key prefix.
+#[derive(Debug, PartialEq)]
+enum AuthMethod {
+    /// OAuth token (e.g. Claude Code setup-token) → Authorization: Bearer
+    Bearer,
+    /// Standard API key → x-api-key header
+    ApiKey,
+    /// No authentication (empty key)
+    None,
+}
+
+fn detect_auth_method(api_key: &str) -> AuthMethod {
+    if api_key.starts_with("sk-ant-oat") {
+        AuthMethod::Bearer
+    } else if !api_key.is_empty() {
+        AuthMethod::ApiKey
+    } else {
+        AuthMethod::None
     }
 }
 
@@ -254,5 +287,31 @@ fn parse_anthropic_event(event_type: &str, data: &str) -> Option<Result<StreamEv
             }))
         }
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn oauth_token_uses_bearer_auth() {
+        assert_eq!(
+            detect_auth_method("sk-ant-oat01-abc123"),
+            AuthMethod::Bearer
+        );
+    }
+
+    #[test]
+    fn api_key_uses_x_api_key_header() {
+        assert_eq!(
+            detect_auth_method("sk-ant-api03-abc123"),
+            AuthMethod::ApiKey
+        );
+    }
+
+    #[test]
+    fn empty_api_key_no_auth_header() {
+        assert_eq!(detect_auth_method(""), AuthMethod::None);
     }
 }

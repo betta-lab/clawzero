@@ -366,19 +366,64 @@ fn collect_provider_answer(
     let mut api_key_env = None;
 
     if meta.needs_api_key {
-        let hint = if let Some(env) = meta.api_key_env {
-            format!("{} API key (leave empty to use ${env})", meta.display)
-        } else {
-            format!("{} API key", meta.display)
-        };
-        let key = prompter.read_password(&hint).map_err(map_err)?;
-        let key = key.trim().to_string();
-        if key.is_empty() {
-            if let Some(env) = meta.api_key_env {
-                api_key_env = Some(env.to_string());
+        // Anthropic: offer auth method selection (API Key vs setup-token)
+        if meta.name == "anthropic" {
+            let auth_choices = vec!["API Key".to_string(), "Claude Code setup-token".to_string()];
+            let auth_idx = prompter
+                .select(
+                    &format!("{} authentication method", meta.display),
+                    &auth_choices,
+                    0,
+                )
+                .map_err(map_err)?;
+            match auth_idx {
+                1 => {
+                    // setup-token
+                    let token = prompter
+                        .read_password("Setup token (sk-ant-oat01-...)")
+                        .map_err(map_err)?;
+                    let token = token.trim().to_string();
+                    if token.is_empty() {
+                        if let Some(env) = meta.api_key_env {
+                            api_key_env = Some(env.to_string());
+                        }
+                    } else {
+                        api_key = Some(token);
+                    }
+                }
+                _ => {
+                    // Standard API Key (existing flow)
+                    let hint = if let Some(env) = meta.api_key_env {
+                        format!("{} API key (leave empty to use ${env})", meta.display)
+                    } else {
+                        format!("{} API key", meta.display)
+                    };
+                    let key = prompter.read_password(&hint).map_err(map_err)?;
+                    let key = key.trim().to_string();
+                    if key.is_empty() {
+                        if let Some(env) = meta.api_key_env {
+                            api_key_env = Some(env.to_string());
+                        }
+                    } else {
+                        api_key = Some(key);
+                    }
+                }
             }
         } else {
-            api_key = Some(key);
+            let hint = if let Some(env) = meta.api_key_env {
+                format!("{} API key (leave empty to use ${env})", meta.display)
+            } else {
+                format!("{} API key", meta.display)
+            };
+            let key = prompter.read_password(&hint).map_err(map_err)?;
+            let key = key.trim().to_string();
+            if key.is_empty() {
+                if let Some(env) = meta.api_key_env {
+                    api_key_env = Some(env.to_string());
+                }
+            } else {
+                api_key = Some(key);
+            }
         }
     }
 
@@ -1220,8 +1265,11 @@ mod tests {
         let path = dir.path().join("config.toml");
         let mut prompter = MockPrompter::new()
             .with_multi_selects(vec![vec![0]]) // Anthropic
+            .with_selects(vec![
+                0, // auth method: API Key
+                0, // first model
+            ])
             .with_passwords(vec!["sk-ant-happy"])
-            .with_selects(vec![0]) // first model
             .with_confirms(vec![false]); // no gateways
         run_init(&mut prompter, &path).unwrap();
         assert!(path.exists());
@@ -1237,8 +1285,11 @@ mod tests {
         let path = dir.path().join("config.toml");
         let mut prompter = MockPrompter::new()
             .with_multi_selects(vec![vec![0, 1]]) // Anthropic + OpenAI
+            .with_selects(vec![
+                0, // auth method: API Key (Anthropic)
+                0, // first model
+            ])
             .with_passwords(vec!["sk-ant-test", "sk-openai-test"])
-            .with_selects(vec![0])
             .with_confirms(vec![false]);
         run_init(&mut prompter, &path).unwrap();
         let content = std::fs::read_to_string(&path).unwrap();
@@ -1288,8 +1339,11 @@ mod tests {
         let path = dir.path().join("config.toml");
         let mut prompter = MockPrompter::new()
             .with_multi_selects(vec![vec![0], vec![0]]) // Anthropic; Slack
+            .with_selects(vec![
+                0, // auth method: API Key
+                0, // first model
+            ])
             .with_passwords(vec!["sk-ant-test", "xapp-test-123", "xoxb-test-456"])
-            .with_selects(vec![0])
             .with_confirms(vec![true]); // yes gateways
         run_init(&mut prompter, &path).unwrap();
         let content = std::fs::read_to_string(&path).unwrap();
@@ -1304,9 +1358,12 @@ mod tests {
         let path = dir.path().join("config.toml");
         let mut prompter = MockPrompter::new()
             .with_multi_selects(vec![vec![0], vec![2]]) // Anthropic; WebUI
+            .with_selects(vec![
+                0, // auth method: API Key
+                0, // first model
+            ])
             .with_passwords(vec!["sk-ant-test"])
             .with_inputs(vec!["0.0.0.0", "8080"]) // host, port
-            .with_selects(vec![0])
             .with_confirms(vec![true]); // yes gateways
         run_init(&mut prompter, &path).unwrap();
         let content = std::fs::read_to_string(&path).unwrap();
@@ -1342,12 +1399,55 @@ mod tests {
         let mut prompter = MockPrompter::new()
             .with_confirms(vec![true, false]) // overwrite + no gateways
             .with_multi_selects(vec![vec![0]]) // Anthropic
-            .with_passwords(vec!["sk-ant-new"])
-            .with_selects(vec![0]);
+            .with_selects(vec![
+                0, // auth method: API Key
+                0, // first model
+            ])
+            .with_passwords(vec!["sk-ant-new"]);
         run_init(&mut prompter, &path).unwrap();
         let content = std::fs::read_to_string(&path).unwrap();
         assert!(content.contains("sk-ant-new"));
         assert!(!content.contains("old content"));
+    }
+
+    #[test]
+    fn test_run_init_with_setup_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        let mut prompter = MockPrompter::new()
+            .with_multi_selects(vec![vec![0]]) // Anthropic
+            .with_selects(vec![
+                1, // auth method: setup-token (index 1)
+                0, // first model
+            ])
+            .with_passwords(vec!["sk-ant-oat01-test-token-123"])
+            .with_confirms(vec![false]); // no gateways
+        run_init(&mut prompter, &path).unwrap();
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert!(content.contains("[providers.anthropic]"));
+        assert!(content.contains("api_key = \"sk-ant-oat01-test-token-123\""));
+        assert!(!content.contains("api_key_env"));
+    }
+
+    #[test]
+    fn test_generate_config_setup_token() {
+        let answers = InitAnswers {
+            providers: vec![ProviderAnswer {
+                name: "anthropic".into(),
+                protocol: "anthropic".into(),
+                base_url: "https://api.anthropic.com".into(),
+                api_key: Some("sk-ant-oat01-test-token-123".into()),
+                api_key_env: None,
+                auth: None,
+                project_id: None,
+                region: None,
+            }],
+            default_model: "anthropic/claude-opus-4-6".into(),
+            gateways: vec![],
+        };
+        let toml = generate_config_toml(&answers);
+        assert!(toml.contains("[providers.anthropic]"));
+        assert!(toml.contains("api_key = \"sk-ant-oat01-test-token-123\""));
     }
 
     #[test]
@@ -1356,8 +1456,11 @@ mod tests {
         let path = dir.path().join("config.toml");
         let mut prompter = MockPrompter::new()
             .with_multi_selects(vec![vec![0]]) // Anthropic
+            .with_selects(vec![
+                0, // auth method: API Key
+                0, // first model
+            ])
             .with_passwords(vec![""]) // empty key
-            .with_selects(vec![0])
             .with_confirms(vec![false]);
         run_init(&mut prompter, &path).unwrap();
         let content = std::fs::read_to_string(&path).unwrap();

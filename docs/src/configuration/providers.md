@@ -4,12 +4,27 @@ clawzero supports multiple LLM providers through two protocol implementations. A
 
 ## Anthropic
 
+### API Key
+
 ```toml
 [providers.anthropic]
 protocol = "anthropic"
 base_url = "https://api.anthropic.com"
 api_key_env = "ANTHROPIC_API_KEY"
 ```
+
+### Claude Code setup-token
+
+If you have a Claude Code setup-token (`sk-ant-oat01-...`), you can use it directly.
+
+```toml
+[providers.anthropic]
+protocol = "anthropic"
+base_url = "https://api.anthropic.com"
+api_key = "sk-ant-oat01-..."
+```
+
+Run `clawzero init` and select "Claude Code setup-token" when prompted for the Anthropic authentication method.
 
 ## OpenAI
 
